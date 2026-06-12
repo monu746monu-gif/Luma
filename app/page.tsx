@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
@@ -39,7 +41,7 @@ const navItems = [
 ];
 
 const heroWorkflow = [
-  { label: "Product Brain created", icon: BrainCircuit, tone: "bg-amber-100 text-amber-800" },
+  { label: "Workflow intake created", icon: BrainCircuit, tone: "bg-amber-100 text-amber-800" },
   { label: "AI Task: Write cold emails", icon: Mail, tone: "bg-orange-100 text-orange-800" },
   { label: "Human Task: Approve positioning", icon: UserCheck, tone: "bg-stone-100 text-stone-800" },
   { label: "AI Task: Create X + LinkedIn posts", icon: PenLine, tone: "bg-yellow-100 text-yellow-800" },
@@ -48,18 +50,18 @@ const heroWorkflow = [
 
 const problemCards = [
   {
-    title: "Scattered launch work",
-    copy: "Launch notes, prompts, channel ideas, and drafts end up spread across too many tools.",
+    title: "Scattered marketing work",
+    copy: "Product notes, prompts, channel ideas, and drafts end up spread across too many tools.",
     icon: Layers3,
   },
   {
     title: "Repeating the same marketing tasks",
-    copy: "Every launch asks for audience research, email drafts, social posts, and planning again.",
+    copy: "Every campaign asks for audience research, email drafts, social posts, and planning again.",
     icon: ClipboardList,
   },
   {
     title: "No memory across campaigns",
-    copy: "The next launch forgets what worked, what changed, and what a human already approved.",
+    copy: "The next workflow forgets what worked, what changed, and what a human already approved.",
     icon: BrainCircuit,
   },
 ];
@@ -67,17 +69,17 @@ const problemCards = [
 const howItWorks = [
   {
     title: "Add your product",
-    copy: "Describe what you built, who it serves, and what the launch needs to achieve.",
+    copy: "Connect Slack so Luma can learn from team context, or explain the product manually.",
     icon: FileText,
   },
   {
     title: "Luma creates product memory",
-    copy: "The agent turns raw inputs into positioning, audience notes, and reusable context.",
+    copy: "Luma turns Slack/manual context into positioning, audience notes, and reusable product memory.",
     icon: BrainCircuit,
   },
   {
-    title: "Luma builds a launch workflow",
-    copy: "Tasks are split by what AI can safely do and where a founder should approve.",
+    title: "Luma builds the strategy",
+    copy: "It recommends platforms, writes the plan, and splits work between AI and humans.",
     icon: GitBranch,
   },
   {
@@ -106,7 +108,7 @@ const humanTasks: WorkflowTask[] = [
 
 const traceItems = [
   "Luma read product brain",
-  "Launch workflow generated",
+  "Marketing workflow generated",
   "AI created outreach tasks",
   "Human approval required for positioning",
   "Memory updated after approval",
@@ -116,10 +118,6 @@ const fadeUp = {
   hidden: { opacity: 0, y: 24 },
   visible: { opacity: 1, y: 0 },
 };
-
-function scrollToDemo() {
-  document.querySelector("#demo")?.scrollIntoView({ behavior: "smooth", block: "start" });
-}
 
 function Pill({ children, tone = "warm" }: { children: React.ReactNode; tone?: "warm" | "ai" | "human" }) {
   const tones = {
@@ -275,8 +273,8 @@ export default function Home() {
       <nav className="sticky top-0 z-50 border-b border-amber-100/70 bg-ivory/82 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-6 lg:px-8">
           <a href="#top" className="flex items-center gap-2 text-xl font-bold tracking-tight text-ink">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-ink text-amber-100">
-              <Sparkles className="h-4 w-4" />
+            <span className="relative h-9 w-9 overflow-hidden rounded-xl bg-amber-100 shadow-sm">
+              <Image src="/logo.jpeg" alt="Luma logo" fill sizes="36px" className="object-cover object-center" priority />
             </span>
             Luma
           </a>
@@ -287,36 +285,36 @@ export default function Home() {
               </a>
             ))}
           </div>
-          <button
-            onClick={scrollToDemo}
+          <Link
+            href="/dashboard"
             className="inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-amber-50 shadow-card transition hover:-translate-y-0.5 hover:bg-[#38271d]"
           >
             Get Started
             <ArrowRight className="h-4 w-4" />
-          </button>
+          </Link>
         </div>
       </nav>
 
       <section id="top" className="mx-auto grid max-w-7xl items-center gap-12 px-5 pb-20 pt-16 sm:px-6 md:pt-24 lg:grid-cols-[1.02fr_0.98fr] lg:px-8">
         <motion.div initial="hidden" animate="visible" variants={fadeUp} transition={{ duration: 0.65 }}>
-          <Pill>AI launch agent workspace</Pill>
+          <Pill>Marketing workflow automation</Pill>
           <h1 className="mt-6 max-w-4xl text-5xl font-semibold tracking-tight text-ink sm:text-6xl lg:text-7xl">
-            Distribution, run by your AI launch agent.
+            Marketing workflows, generated from one product prompt.
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-umber/82 sm:text-xl">
-            Luma turns your product launch into a human + AI workflow — planning outreach, writing emails,
-            preparing posts, routing approvals, and tracking every step from idea to first users.
+            Luma learns your product from Slack or manual notes, creates the marketing strategy, assigns human-only work,
+            drafts platform content for X and Reddit, and tracks progress on a dashboard.
           </p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-            <button
-              onClick={scrollToDemo}
+            <Link
+              href="/dashboard"
               className="inline-flex items-center justify-center gap-2 rounded-full bg-amberSoft px-6 py-3.5 text-sm font-bold text-white shadow-card transition hover:-translate-y-0.5 hover:bg-[#d99125]"
             >
               Get Started
               <ArrowRight className="h-4 w-4" />
-            </button>
+            </Link>
             <a
-              href="#workflow"
+              href="/dashboard"
               className="inline-flex items-center justify-center gap-2 rounded-full border border-amber-200 bg-white/70 px-6 py-3.5 text-sm font-bold text-ink shadow-sm transition hover:-translate-y-0.5 hover:bg-white"
             >
               View Workflow
@@ -419,8 +417,8 @@ export default function Home() {
         <div className="mx-auto max-w-7xl">
           <SectionHeading
             eyebrow="Demo"
-            title="Generate a launch workflow."
-            copy="Use the example product details, or treat this as the first MVP shape for the workflow generator."
+            title="Generate a marketing strategy and workflow."
+            copy="Use Slack or manual product details, then let Luma plan channels, assign people, create drafts, and track execution."
           />
 
           <div className="mt-12 rounded-lg border border-white/80 bg-white/75 p-5 shadow-premium backdrop-blur sm:p-8">
@@ -448,7 +446,7 @@ export default function Home() {
                 />
               </label>
               <label className="block md:col-span-2">
-                <span className="text-sm font-semibold text-umber">Launch goal</span>
+                <span className="text-sm font-semibold text-umber">Success goal</span>
                 <input
                   defaultValue="Get first 100 users"
                   className="mt-2 w-full rounded-lg border border-amber-100 bg-cream px-4 py-3 text-sm font-medium text-ink outline-none transition focus:border-amberSoft focus:ring-4 focus:ring-amber-100"
@@ -461,13 +459,13 @@ export default function Home() {
                 <span className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 text-amber-900">
                   <Bot className="h-4 w-4" />
                 </span>
-                Luma will organize the launch into agent work and founder approvals.
+                Luma will organize the workflow into AI work and human approvals.
               </div>
               <button
                 onClick={() => setWorkflowVisible(true)}
                 className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-ink px-6 py-3.5 text-sm font-bold text-amber-50 shadow-card transition hover:-translate-y-0.5 hover:bg-[#38271d] sm:w-auto"
               >
-                Generate Workflow
+                Generate Flow
                 <Send className="h-4 w-4" />
               </button>
             </div>
@@ -533,15 +531,15 @@ export default function Home() {
         <div className="mx-auto max-w-5xl rounded-lg border border-amber-100 bg-ink px-6 py-14 text-center shadow-premium sm:px-10">
           <Pill>Start here</Pill>
           <h2 className="mx-auto mt-5 max-w-3xl text-3xl font-semibold tracking-tight text-amber-50 sm:text-5xl">
-            Turn your product into a launch workflow.
+            Turn your product into a tracked marketing workflow.
           </h2>
-          <button
-            onClick={scrollToDemo}
+          <Link
+            href="/dashboard"
             className="mt-8 inline-flex items-center justify-center gap-2 rounded-full bg-amberSoft px-6 py-3.5 text-sm font-bold text-white shadow-card transition hover:-translate-y-0.5 hover:bg-[#d99125]"
           >
             Start with Luma
             <ArrowRight className="h-4 w-4" />
-          </button>
+          </Link>
         </div>
       </section>
     </main>

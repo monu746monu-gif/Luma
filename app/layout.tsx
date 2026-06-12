@@ -2,9 +2,14 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Luma | AI Launch Agent Workspace",
+  title: "Luma | Marketing Workflow Automation",
   description:
-    "Luma turns product ideas into human + AI launch workflows for product distribution.",
+    "Luma turns product details, team roles, and selected AI agents into human + AI marketing workflows.",
+  icons: {
+    icon: "/logo.jpeg",
+    shortcut: "/logo.jpeg",
+    apple: "/logo.jpeg",
+  },
 };
 
 export default function RootLayout({
