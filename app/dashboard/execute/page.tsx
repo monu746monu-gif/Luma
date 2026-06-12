@@ -221,22 +221,22 @@ export default function ExecutePage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f7f9fc] text-[#111827]">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#fffbeb_0%,#f7f9fc_240px)] text-[#111827]">
       <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
-        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[#d8e0ea] pb-4">
+        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[#f6d365] pb-4">
           <div className="flex items-center gap-3">
             <div className="relative h-12 w-12 overflow-hidden rounded-2xl border border-[#d8e0ea] bg-white shadow-sm">
               <Image src="/logo.jpeg" alt="Luma logo" fill sizes="48px" className="object-cover object-center" priority />
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#0f766e]">Execution dashboard</p>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#b45309]">Execution dashboard</p>
               <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[#111827]">Run the AI work from your workflow</h1>
             </div>
           </div>
 
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-2 rounded-lg border border-[#d8e0ea] bg-white px-3.5 py-2 text-sm font-bold text-[#111827] transition hover:bg-[#f8fafc]"
+            className="inline-flex items-center gap-2 rounded-lg border border-[#e6d7ad] bg-white px-3.5 py-2 text-sm font-bold text-[#111827] transition hover:bg-[#fffbeb]"
           >
             <ArrowLeft className="h-4 w-4" />
             Back
@@ -244,8 +244,8 @@ export default function ExecutePage() {
         </header>
 
         <section className="mt-6 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="rounded-2xl border border-[#d8e0ea] bg-white p-5 shadow-[0_14px_42px_rgba(18,24,38,0.08)]">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-[#0f766e]">
+          <div className="rounded-2xl border border-[#eadfbf] bg-white p-5 shadow-[0_14px_42px_rgba(18,24,38,0.08)]">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-[#b45309]">
               <Search className="h-4 w-4" />
               Product analysis
             </div>
@@ -257,12 +257,12 @@ export default function ExecutePage() {
                   value={productLink}
                   onChange={(event) => setProductLink(event.target.value)}
                   placeholder="https://yourproduct.com"
-                  className="min-h-12 flex-1 rounded-xl border border-[#d8e0ea] bg-[#f8fafc] px-4 text-sm font-medium outline-none transition placeholder:text-[#94a3b8] focus:border-[#99f6e4] focus:bg-white focus:ring-4 focus:ring-[#ccfbf1]"
+                  className="min-h-12 flex-1 rounded-xl border border-[#d8e0ea] bg-[#f8fafc] px-4 text-sm font-medium outline-none transition placeholder:text-[#b45309]/60 focus:border-[#d8e0ea] focus:bg-white focus:ring-4 focus:ring-[#fef3c7]"
                 />
                 <button
                   onClick={runAnalysis}
                   disabled={isAnalyzing}
-                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#111827] px-5 text-sm font-bold text-white transition hover:bg-[#243041] disabled:opacity-70"
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#ffd84d] px-5 text-sm font-bold text-[#3f2d00] shadow-[0_10px_24px_rgba(245,158,11,0.22)] transition hover:bg-[#facc15] disabled:opacity-70"
                 >
                   {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                   Analyze
@@ -286,13 +286,13 @@ export default function ExecutePage() {
             </div>
 
             {analysis ? (
-              <div className="mt-4 rounded-xl border border-[#d8e0ea] bg-[#ecfdf5] p-4">
+              <div className="mt-4 rounded-xl border border-[#d8e0ea] bg-[#f8fafc] p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-sm font-bold text-[#0f766e]">{analysis.host}</p>
+                    <p className="text-sm font-bold text-[#b45309]">{analysis.host}</p>
                     <p className="mt-1 text-sm leading-6 text-[#334155]">{workflow.product_brain.positioning}</p>
                   </div>
-                  <a href={normalizeUrl(productLink)} target="_blank" rel="noreferrer" className="text-[#0f766e]">
+                  <a href={normalizeUrl(productLink)} target="_blank" rel="noreferrer" className="text-[#b45309]">
                     <ExternalLink className="h-4 w-4" />
                   </a>
                 </div>
@@ -305,15 +305,50 @@ export default function ExecutePage() {
                 </ul>
               </div>
             ) : null}
+
+            <div className="mt-5 border-t border-[#eadfbf] pt-5">
+              <div className="flex items-center gap-2">
+                <Mail className="h-4 w-4 text-[#b45309]" />
+                <h2 className="text-lg font-semibold">Connect mail and send outreach</h2>
+              </div>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <button className="rounded-xl border border-[#d8e0ea] bg-[#f8fafc] p-4 text-left">
+                  <ShieldCheck className="h-5 w-5 text-[#b45309]" />
+                  <p className="mt-2 text-sm font-bold">Use Luma Resend</p>
+                  <p className="mt-1 text-xs leading-5 text-[#526172]">Resend is connected. Luma sends from the configured sender and uses the user's email as reply-to.</p>
+                </button>
+                <button
+                  onClick={() => setMailStatus("Gmail access needs OAuth credentials before it can send from the user's Gmail account.")}
+                  className="rounded-xl border border-[#d8e0ea] bg-[#f8fafc] p-4 text-left transition hover:bg-white"
+                >
+                  <Mail className="h-5 w-5 text-[#ea4335]" />
+                  <p className="mt-2 text-sm font-bold">Ask for Gmail access</p>
+                  <p className="mt-1 text-xs leading-5 text-[#526172]">Request Gmail permission when Google OAuth is configured.</p>
+                </button>
+              </div>
+
+              <div className="mt-4 grid gap-3">
+                <input value={senderEmail} onChange={(event) => setSenderEmail(event.target.value)} placeholder="User email to connect" className="min-h-11 rounded-xl border border-[#d8e0ea] bg-[#f8fafc] px-4 text-sm outline-none placeholder:text-[#b45309]/60 focus:border-[#d8e0ea] focus:ring-4 focus:ring-[#fef3c7]" />
+                <input value={recipientEmail} onChange={(event) => setRecipientEmail(event.target.value)} placeholder="Recipient email" className="min-h-11 rounded-xl border border-[#d8e0ea] bg-[#f8fafc] px-4 text-sm outline-none placeholder:text-[#b45309]/60 focus:border-[#d8e0ea] focus:ring-4 focus:ring-[#fef3c7]" />
+                <input value={emailSubject} onChange={(event) => setEmailSubject(event.target.value)} placeholder="Subject" className="min-h-11 rounded-xl border border-[#d8e0ea] bg-[#f8fafc] px-4 text-sm outline-none placeholder:text-[#b45309]/60 focus:border-[#d8e0ea] focus:ring-4 focus:ring-[#fef3c7]" />
+                <textarea value={emailBody} onChange={(event) => setEmailBody(event.target.value)} rows={5} className="resize-none rounded-xl border border-[#d8e0ea] bg-[#f8fafc] px-4 py-3 text-sm leading-6 outline-none focus:border-[#d8e0ea] focus:ring-4 focus:ring-[#fef3c7]" />
+                <button onClick={sendEmail} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#ffd84d] px-5 text-sm font-bold text-[#3f2d00] shadow-[0_10px_24px_rgba(245,158,11,0.22)] transition hover:bg-[#facc15]">
+                  Send approved email
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+                {mailStatus ? <p className="text-sm font-semibold text-[#526172]">{mailStatus}</p> : null}
+              </div>
+            </div>
           </div>
 
-          <div className="rounded-2xl border border-[#d8e0ea] bg-white p-5 shadow-[0_14px_42px_rgba(18,24,38,0.08)]">
+          <div className="rounded-2xl border border-[#eadfbf] bg-white p-5 shadow-[0_14px_42px_rgba(18,24,38,0.08)]">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#0f766e]">Command center</p>
+                <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#b45309]">Command center</p>
                 <h2 className="mt-2 text-lg font-semibold">AI execution queue</h2>
               </div>
-              <span className="rounded-full bg-[#f8fafc] px-3 py-1.5 text-xs font-bold text-[#334155] ring-1 ring-[#d8e0ea]">
+              <span className="rounded-full bg-[#fffbeb] px-3 py-1.5 text-xs font-bold text-[#92400e] ring-1 ring-[#f6d365]">
                 {completeCount}/{tasks.length} done
               </span>
             </div>
@@ -321,7 +356,7 @@ export default function ExecutePage() {
             <button
               onClick={startExecution}
               disabled={isExecuting || !tasks.length}
-              className="mt-4 inline-flex w-full min-h-12 items-center justify-center gap-2 rounded-xl bg-[#111827] px-5 text-sm font-bold text-white transition hover:bg-[#243041] disabled:opacity-70"
+              className="mt-4 inline-flex w-full min-h-12 items-center justify-center gap-2 rounded-xl bg-[#ffd84d] px-5 text-sm font-bold text-[#3f2d00] shadow-[0_10px_24px_rgba(245,158,11,0.22)] transition hover:bg-[#facc15] disabled:opacity-70"
             >
               {isExecuting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
               Start AI execution
@@ -331,7 +366,7 @@ export default function ExecutePage() {
               {tasks.map((task) => (
                 <div key={task.id} className="flex items-center gap-3 rounded-xl border border-[#d8e0ea] bg-[#f8fafc] p-3">
                   <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
-                    task.status === "complete" ? "bg-[#dcfce7] text-[#16a34a]" : task.status === "running" ? "bg-[#fef3c7] text-[#b45309]" : "bg-white text-[#64748b]"
+                    task.status === "complete" ? "bg-[#dcfce7] text-[#16a34a]" : task.status === "running" ? "bg-[#f8fafc] text-[#b45309]" : "bg-white text-[#64748b]"
                   }`}>
                     {task.status === "complete" ? <CheckCircle2 className="h-4 w-4" /> : task.status === "running" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Clock3 className="h-4 w-4" />}
                   </span>
@@ -346,45 +381,10 @@ export default function ExecutePage() {
           </div>
         </section>
 
-        <section className="mt-4 grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
-          <div className="rounded-2xl border border-[#d8e0ea] bg-white p-5 shadow-[0_14px_42px_rgba(18,24,38,0.08)]">
+        <section className="mt-4">
+          <div className="rounded-2xl border border-[#eadfbf] bg-white p-5 shadow-[0_14px_42px_rgba(18,24,38,0.08)]">
             <div className="flex items-center gap-2">
-              <Mail className="h-4 w-4 text-[#0f766e]" />
-              <h2 className="text-lg font-semibold">Connect mail and send outreach</h2>
-            </div>
-
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <button className="rounded-xl border border-[#0f766e] bg-[#ecfdf5] p-4 text-left">
-                <ShieldCheck className="h-5 w-5 text-[#0f766e]" />
-                <p className="mt-2 text-sm font-bold">Use Luma Resend</p>
-                <p className="mt-1 text-xs leading-5 text-[#526172]">Resend is connected. Luma sends from the configured sender and uses the user's email as reply-to.</p>
-              </button>
-              <button
-                onClick={() => setMailStatus("Gmail access needs OAuth credentials before it can send from the user's Gmail account.")}
-                className="rounded-xl border border-[#d8e0ea] bg-[#f8fafc] p-4 text-left transition hover:bg-white"
-              >
-                <Mail className="h-5 w-5 text-[#ea4335]" />
-                <p className="mt-2 text-sm font-bold">Ask for Gmail access</p>
-                <p className="mt-1 text-xs leading-5 text-[#526172]">Request Gmail permission when Google OAuth is configured.</p>
-              </button>
-            </div>
-
-            <div className="mt-4 grid gap-3">
-              <input value={senderEmail} onChange={(event) => setSenderEmail(event.target.value)} placeholder="User email to connect" className="min-h-11 rounded-xl border border-[#d8e0ea] bg-[#f8fafc] px-4 text-sm outline-none focus:border-[#99f6e4] focus:ring-4 focus:ring-[#ccfbf1]" />
-              <input value={recipientEmail} onChange={(event) => setRecipientEmail(event.target.value)} placeholder="Recipient email" className="min-h-11 rounded-xl border border-[#d8e0ea] bg-[#f8fafc] px-4 text-sm outline-none focus:border-[#99f6e4] focus:ring-4 focus:ring-[#ccfbf1]" />
-              <input value={emailSubject} onChange={(event) => setEmailSubject(event.target.value)} placeholder="Subject" className="min-h-11 rounded-xl border border-[#d8e0ea] bg-[#f8fafc] px-4 text-sm outline-none focus:border-[#99f6e4] focus:ring-4 focus:ring-[#ccfbf1]" />
-              <textarea value={emailBody} onChange={(event) => setEmailBody(event.target.value)} rows={5} className="resize-none rounded-xl border border-[#d8e0ea] bg-[#f8fafc] px-4 py-3 text-sm leading-6 outline-none focus:border-[#99f6e4] focus:ring-4 focus:ring-[#ccfbf1]" />
-              <button onClick={sendEmail} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#111827] px-5 text-sm font-bold text-white transition hover:bg-[#243041]">
-                Send approved email
-                <ArrowRight className="h-4 w-4" />
-              </button>
-              {mailStatus ? <p className="text-sm font-semibold text-[#526172]">{mailStatus}</p> : null}
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-[#d8e0ea] bg-white p-5 shadow-[0_14px_42px_rgba(18,24,38,0.08)]">
-            <div className="flex items-center gap-2">
-              <Bot className="h-4 w-4 text-[#0f766e]" />
+              <Bot className="h-4 w-4 text-[#b45309]" />
               <h2 className="text-lg font-semibold">AI-created work</h2>
             </div>
             <div className="mt-4 grid gap-3 md:grid-cols-2">
