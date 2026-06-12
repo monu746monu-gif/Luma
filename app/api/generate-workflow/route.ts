@@ -7,6 +7,7 @@ import type {
 
 const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 const MODEL = "gpt-4o-mini";
+const MAX_POST_WORDS = 100;
 
 type DetailedWorkflowNodeData = WorkflowNodeData & {
   hover_summary?: string;
@@ -51,6 +52,16 @@ function toStringArray(value: unknown): string[] {
       return "";
     })
     .filter(Boolean);
+}
+
+function limitWords(text: string, maxWords = MAX_POST_WORDS) {
+  const words = text.trim().split(/\s+/).filter(Boolean);
+
+  if (words.length <= maxWords) {
+    return text;
+  }
+
+  return words.slice(0, maxWords).join(" ");
 }
 
 function normalizeWorkflow(data: DetailedGeneratedWorkflow): DetailedGeneratedWorkflow {
@@ -121,7 +132,7 @@ function normalizeWorkflow(data: DetailedGeneratedWorkflow): DetailedGeneratedWo
     platform_content: platformContent.map((item) => ({
       platform: item.platform ?? "Platform",
       content_type: item.content_type ?? "Content draft",
-      draft: item.draft ?? "",
+      draft: limitWords(item.draft ?? ""),
       owner: item.owner ?? "Founder",
       tool: item.tool ?? "Luma",
     })),
@@ -476,35 +487,35 @@ function buildFallback(input: ProductInput): DetailedGeneratedWorkflow {
       {
         platform: "Product Hunt",
         content_type: "Launch page brief",
-        draft: `Tagline: ${productName} helps ${input.targetAudience || "busy teams"} turn messy work into a clear AI + human workflow.\n\nDescription: ${productName} gives teams a simple way to plan, assign, approve, and track launch work across AI agents and humans. Instead of scattered prompts, tasks, and tools, everything becomes one traceable workflow.\n\nMaker comment angle: We built this because teams do not need more AI suggestions — they need AI that knows what to do, what humans should approve, and how to keep work moving.`,
+        draft: `Tagline: ${productName} helps ${input.targetAudience || "busy teams"} turn messy work into a clear AI + human workflow.\n\nDescription: ${productName} helps teams plan, assign, approve, and track launch work across AI agents and humans. Instead of scattered prompts and tools, every task becomes one traceable workflow.\n\nMaker comment: We built this because teams need AI that knows what to do, what humans should approve, and how to keep work moving.`,
         owner: "AI drafts, founder approves",
         tool: "Product Hunt",
       },
       {
         platform: "X",
         content_type: "Launch post",
-        draft: `Launching ${productName} tomorrow 🚀\n\nThe idea is simple:\nAI should not just answer questions.\nIt should help route work.\n\n${productName} turns a goal into a workflow, assigns repetitive tasks to AI, keeps humans in control for approvals, and tracks every step.\n\nLooking for early feedback.`,
+        draft: `Launching ${productName} tomorrow.\n\nAI should not just answer questions. It should help route work.\n\n${productName} turns a goal into a workflow, assigns repetitive tasks to AI, keeps humans in control for approvals, and tracks every step.\n\nLooking for early feedback.`,
         owner: "AI drafts, founder approves",
         tool: "X",
       },
       {
         platform: "LinkedIn",
         content_type: "Founder launch story",
-        draft: `Building products is easier than ever, but executing the work around them is still messy.\n\nThat is why we built ${productName}: a human + AI workflow system that breaks a goal into tasks, assigns repeatable work to AI agents, routes decisions to people, and tracks progress from start to finish.\n\nWe are opening early access and looking for feedback from ${input.targetAudience || "founders, builders, and small teams"}.`,
+        draft: `Building products is easier than ever, but executing the work around them is still messy.\n\nThat is why we built ${productName}: a human + AI workflow system that breaks a goal into tasks, assigns repeatable work to AI agents, routes decisions to people, and tracks progress.\n\nWe are opening early access and looking for feedback from ${input.targetAudience || "founders, builders, and small teams"}.`,
         owner: "AI drafts, founder approves",
         tool: "LinkedIn",
       },
       {
         platform: "Reddit",
         content_type: "Community feedback post",
-        draft: `Hey everyone,\n\nI’m building ${productName}, a tool that turns a goal into a human + AI workflow. The idea is that AI handles repetitive work like drafting, research, planning, and tracking, while humans approve the important decisions.\n\nI’m trying to understand if this is useful for ${input.targetAudience || "small teams and builders"}.\n\nWould you use something like this? What workflow would you want AI to route for you?`,
+        draft: `Hey everyone,\n\nI am building ${productName}, a tool that turns a goal into a human + AI workflow. AI handles repetitive work like drafting, research, planning, and tracking, while humans approve the important decisions.\n\nI am trying to understand if this is useful for ${input.targetAudience || "small teams and builders"}.\n\nWould you use something like this? What workflow would you want AI to route for you?`,
         owner: "AI drafts, human posts manually",
         tool: "Reddit",
       },
       {
         platform: "Email",
         content_type: "Cold outreach email",
-        draft: `Subject: Quick feedback on ${productName}?\n\nHey [Name],\n\nI’m building ${productName}, a workflow system that routes tasks between AI agents and humans.\n\nIt helps ${input.targetAudience || "teams and founders"} turn messy goals into clear workflows where AI handles repetitive work and humans approve the important decisions.\n\nWould you be open to taking a quick look and sharing feedback?`,
+        draft: `Subject: Quick feedback on ${productName}?\n\nHey [Name],\n\nI am building ${productName}, a workflow system that routes tasks between AI agents and humans.\n\nIt helps ${input.targetAudience || "teams and founders"} turn messy goals into clear workflows where AI handles repetitive work and humans approve important decisions.\n\nWould you be open to taking a quick look and sharing feedback?`,
         owner: "AI drafts, human approves, Resend sends",
         tool: "Resend",
       },
@@ -706,6 +717,8 @@ Quality rules:
 - Make output feel like a real launch operating plan from A to Z.
 - Do not produce generic advice.
 - Platform content must contain usable draft text, not placeholders.
+- Every platform_content draft must be 100 words or fewer.
+- X, LinkedIn, and Reddit posts must be concise and ready to post without exceeding 100 words.
 `;
 
     const userPrompt = `

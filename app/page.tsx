@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Space_Grotesk } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
@@ -32,6 +33,11 @@ type WorkflowTask = {
   status: "Scheduled" | "Waiting";
   icon: React.ElementType;
 };
+
+const heroAccentFont = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["400", "500", "700"],
+});
 
 const navItems = [
   { label: "Product", href: "#product" },
@@ -298,12 +304,31 @@ export default function Home() {
       <section id="top" className="mx-auto grid max-w-7xl items-center gap-12 px-5 pb-20 pt-16 sm:px-6 md:pt-24 lg:grid-cols-[1.02fr_0.98fr] lg:px-8">
         <motion.div initial="hidden" animate="visible" variants={fadeUp} transition={{ duration: 0.65 }}>
           <Pill>Marketing workflow automation</Pill>
-          <h1 className="mt-6 max-w-4xl text-5xl font-semibold tracking-tight text-ink sm:text-6xl lg:text-7xl">
+          <h1 className="mt-6 max-w-4xl text-4xl font-semibold tracking-tight text-ink sm:text-5xl lg:text-6xl">
             Marketing workflows, generated from one product prompt.
           </h1>
-          <p className="mt-6 max-w-2xl text-lg leading-8 text-umber/82 sm:text-xl">
-            Luma learns your product from Slack or manual notes, creates the marketing strategy, assigns human-only work,
-            drafts platform content for X and Reddit, and tracks progress on a dashboard.
+          <p className={`${heroAccentFont.className} mt-6 max-w-2xl text-lg leading-8 text-black sm:text-xl`}>
+            Luma learns your product using Slack, and builds the
+            <span className="bg-[#fde68a] px-1.5 py-0.5 text-black">
+              full marketing workflow
+            </span>
+            , assigns approval work to humans, and lets AI handle the rest
+            - from creating posts and emails to finding customers, tracking growth, and improving your launch strategy.
+          </p>
+          <p className="mt-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.16em] text-amberSoft">
+            Get your first 100 users with
+            <span className="inline-flex items-center gap-1.5 normal-case tracking-normal text-[#111827]">
+              Luma
+              <span className="relative h-4 w-4 overflow-hidden rounded-sm">
+                <Image
+                  src="/logo.jpeg"
+                  alt=""
+                  fill
+                  sizes="16px"
+                  className="object-cover object-center"
+                />
+              </span>
+            </span>
           </p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <Link
@@ -320,6 +345,13 @@ export default function Home() {
               View Workflow
               <GitBranch className="h-4 w-4" />
             </a>
+            <Link
+              href="/growth"
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-amber-200 bg-white/70 px-6 py-3.5 text-sm font-bold text-ink shadow-sm transition hover:-translate-y-0.5 hover:bg-white"
+            >
+              Growth graphs
+              <ChevronRight className="h-4 w-4" />
+            </Link>
           </div>
         </motion.div>
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
@@ -366,7 +367,13 @@ function MailLogo({ className = "h-4 w-4" }: { className?: string }) {
   );
 }
 
-function ConnectToolsBar({ slackConnected }: { slackConnected: boolean }) {
+function ConnectToolsBar({
+  slackConnected,
+  showStartExecution = false,
+}: {
+  slackConnected: boolean;
+  showStartExecution?: boolean;
+}) {
   const tools = [
     {
       name: "Slack",
@@ -406,7 +413,7 @@ function ConnectToolsBar({ slackConnected }: { slackConnected: boolean }) {
   ];
 
   return (
-    <div className="mx-auto mt-3 flex w-fit items-center gap-2 rounded-full border border-[#d8e0ea] bg-white/90 px-3 py-2 shadow-[0_12px_30px_rgba(18,24,38,0.10)]">
+    <div className="mx-auto mt-3 flex w-fit flex-wrap items-center justify-center gap-2 rounded-full border border-[#d8e0ea] bg-white/90 px-3 py-2 shadow-[0_12px_30px_rgba(18,24,38,0.10)]">
       <span className="text-xs font-bold text-[#526172]">Connect your tools</span>
 
       <div className="h-4 w-px bg-[#d8e0ea]" />
@@ -440,6 +447,19 @@ function ConnectToolsBar({ slackConnected }: { slackConnected: boolean }) {
           </button>
         ))}
       </div>
+
+      {showStartExecution ? (
+        <>
+          <div className="hidden h-4 w-px bg-[#d8e0ea] sm:block" />
+          <Link
+            href="/dashboard/execute"
+            className="inline-flex min-h-8 items-center justify-center gap-2 rounded-full bg-[#111827] px-3.5 py-1.5 text-xs font-bold text-white transition hover:-translate-y-0.5 hover:bg-[#243041]"
+          >
+            Start execution
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </>
+      ) : null}
     </div>
   );
 }
@@ -512,8 +532,13 @@ export default function DashboardPage() {
 
       const data = (await response.json()) as GeneratedWorkflow;
       setWorkflow(data);
+      window.localStorage.setItem("luma_execution_workflow", JSON.stringify(data));
+      window.localStorage.setItem("luma_execution_prompt", trimmedPrompt);
     } catch {
-      setWorkflow(makeFallbackWorkflow(trimmedPrompt));
+      const fallbackWorkflow = makeFallbackWorkflow(trimmedPrompt);
+      setWorkflow(fallbackWorkflow);
+      window.localStorage.setItem("luma_execution_workflow", JSON.stringify(fallbackWorkflow));
+      window.localStorage.setItem("luma_execution_prompt", trimmedPrompt);
       setToast("Demo workflow generated. Add OPENAI_API_KEY in .env.local for live generation.");
       window.setTimeout(() => setToast(""), 4200);
     } finally {
@@ -567,27 +592,36 @@ export default function DashboardPage() {
               />
 
               <div className="mt-3 flex justify-end">
-                <button
-                  onClick={generateWorkflow}
-                  disabled={isLoading}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#111827] px-5 py-3 text-sm font-bold text-white shadow-[0_14px_30px_rgba(18,24,38,0.18)] transition hover:-translate-y-0.5 hover:bg-[#243041] disabled:cursor-not-allowed disabled:opacity-70"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Generating
-                    </>
-                  ) : (
-                    <>
-                      Generate workflow
-                      <ArrowRight className="h-4 w-4" />
-                    </>
-                  )}
-                </button>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Link
+                    href="/dashboard/content"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#d8e0ea] bg-white px-5 py-3 text-sm font-bold text-[#111827] shadow-[0_14px_30px_rgba(18,24,38,0.08)] transition hover:-translate-y-0.5 hover:bg-[#f8fafc]"
+                  >
+                    Generate draft
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                  <button
+                    onClick={generateWorkflow}
+                    disabled={isLoading}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#111827] px-5 py-3 text-sm font-bold text-white shadow-[0_14px_30px_rgba(18,24,38,0.18)] transition hover:-translate-y-0.5 hover:bg-[#243041] disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Generating
+                      </>
+                    ) : (
+                      <>
+                        Generate workflow
+                        <ArrowRight className="h-4 w-4" />
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
 
-            <ConnectToolsBar slackConnected={slackConnected} />
+            <ConnectToolsBar slackConnected={slackConnected} showStartExecution={Boolean(workflow)} />
 
             {workflow ? (
               <motion.section
@@ -829,8 +863,7 @@ export default function DashboardPage() {
                 <button
                   onClick={() => {
                     if (selectedStep.title.toLowerCase().includes("content")) {
-                      setToast("Content generation page coming next.");
-                      window.setTimeout(() => setToast(""), 3000);
+                      window.location.href = "/dashboard/content";
                       return;
                     }
 

@@ -13,7 +13,7 @@ function textToHtml(text: string) {
 
 export async function POST(req: Request) {
   try {
-    const { to, subject, body } = await req.json();
+    const { to, subject, body, replyTo } = await req.json();
 
     if (!process.env.RESEND_API_KEY) {
       return NextResponse.json(
@@ -33,6 +33,7 @@ export async function POST(req: Request) {
       from: process.env.LUMA_FROM_EMAIL || "onboarding@resend.dev",
       to: [to],
       subject,
+      replyTo,
       html: `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#241A14">${textToHtml(
         body
       )}</div>`,
