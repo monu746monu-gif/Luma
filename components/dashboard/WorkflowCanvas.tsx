@@ -157,27 +157,46 @@ function FlowBoard({
   onSelectNode: (node: WorkflowNodeData) => void;
 }) {
   return (
-    <div className="relative min-h-[520px] overflow-hidden rounded-lg border border-white/60 bg-[#dfe5ec]/74 p-5 shadow-[0_20px_70px_rgba(18,24,38,0.12)] backdrop-blur-xl">
-      <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(219,234,254,0.58),rgba(255,255,255,0.26)_42%,rgba(254,226,226,0.42))]" />
-      <div className="absolute inset-0 bg-[radial-gradient(#94a3b8_1px,transparent_1px)] opacity-30 [background-size:24px_24px]" />
+    <div className="relative overflow-hidden rounded-lg border border-[#d6dde8] bg-[#f8fbff] p-4 shadow-[0_20px_70px_rgba(18,24,38,0.10)] md:p-5">
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(232,240,249,0.64))]" />
+      <div className="absolute inset-x-6 bottom-0 top-0 hidden w-px bg-[#bfd0df] md:block xl:left-1/2 xl:right-auto" />
 
-      <div className="relative grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {nodes.map((node, index) => (
-          <motion.div
-            key={`${node.id}-${node.title}`}
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.04, duration: 0.28 }}
-            className={index % 2 === 1 ? "xl:mt-20" : index % 4 === 2 ? "xl:mt-10" : ""}
-          >
-            <WorkflowNode node={node} index={index} isSelected={selectedNode?.id === node.id} onSelect={() => onSelectNode(node)} />
-            {index < nodes.length - 1 ? (
-              <div className="hidden xl:block">
-                <ArrowRight className="absolute top-1/2 ml-[calc(25%-1.1rem)] h-5 w-5 -translate-y-1/2 text-[#64748b]" />
+      <div className="relative grid gap-0">
+        {nodes.map((node, index) => {
+          const isLeft = index % 2 === 0;
+          const isLast = index === nodes.length - 1;
+
+          return (
+            <motion.div
+              key={`${node.id}-${node.title}`}
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.04, duration: 0.28 }}
+              className={`relative flex pb-6 last:pb-0 md:pl-14 xl:pl-0 ${
+                isLeft ? "xl:justify-start xl:pr-[calc(50%+2.25rem)]" : "xl:justify-end xl:pl-[calc(50%+2.25rem)]"
+              }`}
+            >
+              {!isLast ? (
+                <span className="absolute bottom-0 left-6 top-8 w-px bg-[#bfd0df] md:left-6 xl:left-1/2" aria-hidden="true" />
+              ) : null}
+              <span
+                className="absolute left-[13px] top-5 z-20 flex h-7 w-7 items-center justify-center rounded-full border-4 border-[#f8fbff] bg-[#0f766e] text-[10px] font-bold text-white shadow-sm md:left-[13px] xl:left-1/2 xl:-translate-x-1/2"
+                aria-hidden="true"
+              >
+                {index + 1}
+              </span>
+              <span
+                className={`absolute top-[2.15rem] hidden h-px w-8 bg-[#bfd0df] md:block xl:w-9 ${
+                  isLeft ? "left-6 xl:left-[calc(50%-2.25rem)]" : "left-6 xl:left-1/2"
+                }`}
+                aria-hidden="true"
+              />
+              <div className="w-full xl:max-w-[440px]">
+                <WorkflowNode node={node} index={index} isSelected={selectedNode?.id === node.id} onSelect={() => onSelectNode(node)} />
               </div>
-            ) : null}
-          </motion.div>
-        ))}
+            </motion.div>
+          );
+        })}
       </div>
     </div>
   );
@@ -247,7 +266,7 @@ export function WorkflowCanvas({
   onEditProduct,
   onGenerate,
 }: WorkflowCanvasProps) {
-  const visibleWorkflow = workflow?.workflow.slice(0, 8) ?? [];
+  const visibleWorkflow = workflow?.workflow ?? [];
   const trace = workflow?.trace?.length ? workflow.trace : fallbackTrace;
 
   return (

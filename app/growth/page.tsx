@@ -4,6 +4,8 @@ import { ArrowLeft, Mail, TrendingUp } from "lucide-react";
 const platformGrowth = [
   {
     platform: "Product Hunt",
+    metric: "Product Hunt copy ready",
+    count: "1 launch brief",
     color: "bg-orange-500",
     accent: "text-orange-700",
     sample: [18, 26, 34, 28, 42, 55, 64],
@@ -11,6 +13,8 @@ const platformGrowth = [
   },
   {
     platform: "X",
+    metric: "X posts generated",
+    count: "14 drafts",
     color: "bg-slate-900",
     accent: "text-slate-700",
     sample: [14, 20, 28, 36, 45, 58, 66],
@@ -18,6 +22,8 @@ const platformGrowth = [
   },
   {
     platform: "LinkedIn",
+    metric: "LinkedIn posts scheduled",
+    count: "7 drafts",
     color: "bg-sky-600",
     accent: "text-sky-700",
     sample: [12, 18, 24, 30, 33, 39, 48],
@@ -25,6 +31,8 @@ const platformGrowth = [
   },
   {
     platform: "Reddit",
+    metric: "Reddit posts drafted",
+    count: "7 actions",
     color: "bg-rose-600",
     accent: "text-rose-700",
     sample: [8, 11, 15, 13, 18, 21, 25],
@@ -32,18 +40,31 @@ const platformGrowth = [
   },
   {
     platform: "Email",
+    metric: "Emails prepared",
+    count: "70 targets",
     color: "bg-emerald-600",
     accent: "text-emerald-700",
     sample: [10, 14, 19, 22, 24, 27, 32],
     note: "Warm outreach, follow-ups, and direct replies.",
   },
   {
-    platform: "LinkedIn Ads",
+    platform: "Slack",
+    metric: "Human approvals pending",
+    count: "6 approvals",
     color: "bg-violet-600",
     accent: "text-violet-700",
-    sample: [6, 10, 14, 18, 17, 21, 24],
-    note: "Reserved for future paid growth tracking.",
+    sample: [4, 7, 9, 12, 15, 18, 22],
+    note: "Team context, approval routing, and warm intros.",
   },
+];
+
+const progressCards = [
+  { label: "X posts generated", value: "14", tone: "bg-slate-900 text-white" },
+  { label: "LinkedIn posts scheduled", value: "7", tone: "bg-sky-600 text-white" },
+  { label: "Reddit posts drafted", value: "7", tone: "bg-rose-600 text-white" },
+  { label: "Emails prepared", value: "70", tone: "bg-emerald-600 text-white" },
+  { label: "Human approvals pending", value: "6", tone: "bg-amber-400 text-[#3f2d00]" },
+  { label: "First 100 users progress", value: "32%", tone: "bg-violet-600 text-white" },
 ];
 
 function GrowthBars({ values, color }: { values: number[]; color: string }) {
@@ -103,6 +124,21 @@ function PlatformLogo({
     );
   }
 
+  if (platform === "Slack") {
+    return (
+      <svg viewBox="0 0 122.8 122.8" className={className} aria-hidden="true">
+        <path d="M25.8 77.6c0 7.1-5.8 12.9-12.9 12.9S0 84.7 0 77.6s5.8-12.9 12.9-12.9h12.9v12.9z" fill="#E01E5A" />
+        <path d="M32.3 77.6c0-7.1 5.8-12.9 12.9-12.9s12.9 5.8 12.9 12.9v32.3c0 7.1-5.8 12.9-12.9 12.9s-12.9-5.8-12.9-12.9V77.6z" fill="#E01E5A" />
+        <path d="M45.2 25.8c-7.1 0-12.9-5.8-12.9-12.9S38.1 0 45.2 0s12.9 5.8 12.9 12.9v12.9H45.2z" fill="#36C5F0" />
+        <path d="M45.2 32.3c7.1 0 12.9 5.8 12.9 12.9s-5.8 12.9-12.9 12.9H12.9C5.8 58.1 0 52.3 0 45.2s5.8-12.9 12.9-12.9h32.3z" fill="#36C5F0" />
+        <path d="M97 45.2c0-7.1 5.8-12.9 12.9-12.9s12.9 5.8 12.9 12.9-5.8 12.9-12.9 12.9H97V45.2z" fill="#2EB67D" />
+        <path d="M90.5 45.2c0 7.1-5.8 12.9-12.9 12.9s-12.9-5.8-12.9-12.9V12.9C64.7 5.8 70.5 0 77.6 0s12.9 5.8 12.9 12.9v32.3z" fill="#2EB67D" />
+        <path d="M77.6 97c7.1 0 12.9 5.8 12.9 12.9s-5.8 12.9-12.9 12.9-12.9-5.8-12.9-12.9V97h12.9z" fill="#ECB22E" />
+        <path d="M77.6 90.5c-7.1 0-12.9-5.8-12.9-12.9s5.8-12.9 12.9-12.9h32.3c7.1 0 12.9 5.8 12.9 12.9s-5.8 12.9-12.9 12.9H77.6z" fill="#ECB22E" />
+      </svg>
+    );
+  }
+
   return <Mail className={className} />;
 }
 
@@ -113,9 +149,9 @@ export default function GrowthPage() {
         <div className="flex items-center justify-between gap-4 border-b border-[#facc15] pb-4">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#a16207]">Growth page</p>
-            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-[#1f1600]">Platform growth graphs</h1>
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-[#1f1600]">First 100 users growth</h1>
             <p className="mt-1 text-sm leading-6 text-[#6b4e16]">
-              Sample space for tracking every platform now. We can swap in real analytics later without changing the layout.
+              Track drafts, approvals, outreach, and progress across the first 7-day execution plan.
             </p>
           </div>
 
@@ -126,6 +162,15 @@ export default function GrowthPage() {
             <ArrowLeft className="h-4 w-4" />
             Back
           </Link>
+        </div>
+
+        <div className="mt-6 grid gap-3 md:grid-cols-3 xl:grid-cols-6">
+          {progressCards.map((card) => (
+            <section key={card.label} className="rounded-2xl border border-[#facc15] bg-[#fffdf2] p-4 shadow-[0_10px_30px_rgba(161,98,7,0.10)]">
+              <span className={`inline-flex rounded-lg px-2.5 py-1 text-xs font-bold ${card.tone}`}>{card.value}</span>
+              <p className="mt-3 text-sm font-bold leading-5 text-[#1f1600]">{card.label}</p>
+            </section>
+          ))}
         </div>
 
         <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -155,10 +200,10 @@ export default function GrowthPage() {
               <GrowthBars values={platform.sample} color={platform.color} />
 
               <div className="mt-4 flex items-center justify-between text-xs font-semibold text-[#7c5f1b]">
-                <span>Sample 7-day trend</span>
+                <span>{platform.metric}</span>
                 <span className="inline-flex items-center gap-1">
                   <TrendingUp className="h-3.5 w-3.5" />
-                  Growth placeholder
+                  {platform.count}
                 </span>
               </div>
             </section>

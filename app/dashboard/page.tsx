@@ -8,7 +8,10 @@ import {
   ArrowRight,
   Bot,
   CheckCircle2,
+  Copy,
   Loader2,
+  Play,
+  Save,
   UserCheck,
   X,
 } from "lucide-react";
@@ -27,6 +30,8 @@ type ExpandedWorkflowNode = WorkflowNodeData & {
   tools_needed?: string[];
   next_action?: string;
 };
+
+type LocalExecutionStatus = "pending" | "running" | "waiting_approval" | "approved" | "completed";
 
 function makeInputFromPrompt(prompt: string, apiKey: string): ProductInput {
   return {
@@ -319,6 +324,74 @@ function makeFallbackWorkflow(prompt: string): GeneratedWorkflow {
   };
 }
 
+function makeFirst100FallbackWorkflow(prompt: string): GeneratedWorkflow {
+  const productName = "User product";
+  const nodes: WorkflowNodeData[] = [
+    { id: "learn-product", title: "Learn Product Context", description: "Read the product prompt and connected Slack context before planning.", owner: "ai", agent: "Product Brain Agent", status: "ready", app: "Slack + Luma", icon: "brain", x: 5, y: 35, colorTone: "ai", action_type: "generate", requires_approval: false, execution_button_label: "Generate product brain", hover_summary: "Luma extracts the product, audience, pain, promise, and assumptions before generating public content.", expanded_details: ["Summarize the product and target user.", "Use Slack context only if connected.", "Identify assumptions for review.", "Prepare reusable product memory."], outputs: ["Product brain", "Audience assumptions"], human_role: "Confirm assumptions.", ai_role: "Learn and structure context.", tools_needed: ["Luma", "Slack"], next_action: "Generate product brain" },
+    { id: "first-100", title: "Define First 100 Users Strategy", description: "Create a real 7-day execution plan to get the first 100 users.", owner: "ai", agent: "Growth Strategy Agent", status: "ready", app: "Luma", icon: "rocket", x: 30, y: 12, colorTone: "ai", action_type: "generate", requires_approval: false, execution_button_label: "Generate strategy", hover_summary: "Luma turns the prompt into daily acquisition goals, platform choices, content work, outreach work, and approval gates.", expanded_details: ["Set daily growth goals.", "Choose first channels.", "Define expected outputs.", "Add tracking checkpoints."], outputs: ["7-day plan", "Daily goals"], human_role: "Approve the strategy direction.", ai_role: "Plan the execution system.", tools_needed: ["Luma"], next_action: "Generate strategy" },
+    { id: "platforms", title: "Find Platforms and Segments", description: "Suggest customer segments and where to find them.", owner: "ai", agent: "Discovery Agent", status: "ready", app: "LinkedIn + X + Reddit", icon: "search", x: 58, y: 18, colorTone: "platform", action_type: "generate", requires_approval: false, execution_button_label: "Find targets", hover_summary: "Luma creates suggested search targets, potential customer segments, people to look for, and search keywords without claiming live scraping.", expanded_details: ["Create ideal customer profiles.", "Suggest LinkedIn and X keywords.", "Suggest Reddit communities.", "Map Product Hunt similar audiences."], outputs: ["Search targets", "Customer segments"], human_role: "Pick the strongest segment.", ai_role: "Generate discovery targets.", tools_needed: ["LinkedIn", "X", "Reddit"], next_action: "Find targets" },
+    { id: "daily-content", title: "Generate Daily Marketing Content", description: "Generate 14 X posts, 7 LinkedIn posts, Reddit actions, Product Hunt copy, and email angles.", owner: "ai", agent: "Content Agent", status: "ready", app: "X + LinkedIn + Reddit", icon: "message", x: 27, y: 50, colorTone: "ai", action_type: "generate", requires_approval: true, execution_button_label: "Generate content", hover_summary: "Luma creates platform-native drafts for all seven days. Public content stays in draft until a human approves it.", expanded_details: ["Write 2 X posts per day.", "Write 1 LinkedIn post per day.", "Create feedback-first Reddit actions.", "Prepare Product Hunt and community copy."], outputs: ["14 X drafts", "7 LinkedIn drafts", "Community actions"], human_role: "Review tone, claims, and spam risk.", ai_role: "Create all daily drafts.", tools_needed: ["X", "LinkedIn", "Reddit", "Product Hunt"], next_action: "Generate content" },
+    { id: "people", title: "Find Important People", description: "Create search lists for customers and communities to look at.", owner: "ai", agent: "Customer Discovery Agent", status: "ready", app: "X + LinkedIn + Reddit", icon: "users", x: 75, y: 45, colorTone: "platform", action_type: "generate", requires_approval: false, execution_button_label: "Generate search list", hover_summary: "The output is a practical map of people to look for, keywords, communities, and similar-product audiences.", expanded_details: ["List roles and buying signals.", "Suggest X and LinkedIn keywords.", "Suggest Reddit threads.", "Suggest founder communities."], outputs: ["People to look for", "Search keywords"], human_role: "Validate target fit.", ai_role: "Create search-ready targets.", tools_needed: ["LinkedIn", "X", "Reddit", "Product Hunt"], next_action: "Generate search list" },
+    { id: "emails", title: "Create Cold Outreach Emails", description: "Create cold email and follow-up drafts for potential customers.", owner: "ai", agent: "Email Agent", status: "ready", app: "Email", icon: "mail", x: 52, y: 72, colorTone: "ai", action_type: "generate", requires_approval: true, execution_button_label: "Generate emails", hover_summary: "Luma writes concise outreach drafts and follow-ups. Emails are never sent without human approval.", expanded_details: ["Write persona-specific cold emails.", "Write follow-ups.", "Keep asks low-friction.", "Save drafts for approval."], outputs: ["Cold emails", "Follow-ups"], human_role: "Approve recipients and copy.", ai_role: "Draft outreach.", tools_needed: ["Email", "Resend"], next_action: "Generate emails" },
+    { id: "approval", title: "Ask Human Approval", description: "Humans approve all public posts and emails before they are used.", owner: "human", agent: "Founder Review", status: "waiting", app: "Luma", icon: "userCheck", x: 80, y: 75, colorTone: "human", action_type: "approve", requires_approval: true, execution_button_label: "Approve drafts", hover_summary: "Luma plans the strategy, does the repeatable work, and only asks humans for approval.", expanded_details: ["Review posts.", "Review emails.", "Check Reddit tone.", "Approve or request edits."], outputs: ["Approval queue"], human_role: "Approve, edit, or reject.", ai_role: "Prepare review queue.", tools_needed: ["Luma"], next_action: "Approve drafts" },
+    { id: "drafts", title: "Schedule / Save Drafts", description: "Save approved content as drafts and schedule only after approval.", owner: "system", agent: "Draft Operations Agent", status: "ready", app: "Calendar + Drafts", icon: "calendar", x: 25, y: 84, colorTone: "system", action_type: "save_draft", requires_approval: true, execution_button_label: "Save drafts", hover_summary: "Approved outputs can be saved as drafts or scheduled. Luma does not auto-post publicly.", expanded_details: ["Save approved drafts.", "Create the schedule.", "Keep unapproved work waiting.", "Update statuses."], outputs: ["Draft queue", "Schedule"], human_role: "Approve scheduling.", ai_role: "Organize drafts.", tools_needed: ["Calendar", "Social platforms"], next_action: "Save drafts" },
+    { id: "growth", title: "Track Growth and Update Strategy", description: "Track replies, approvals, and first-100-users progress.", owner: "system", agent: "Growth Tracker", status: "ready", app: "Luma", icon: "activity", x: 6, y: 68, colorTone: "system", action_type: "track", requires_approval: false, execution_button_label: "Track growth", hover_summary: "Luma tracks output volume, approvals, replies, and first-100-users progress, then recommends daily updates.", expanded_details: ["Track generated drafts.", "Track approvals.", "Track replies and interested users.", "Update the strategy."], outputs: ["Growth tracker", "Updated strategy"], human_role: "Decide what to repeat.", ai_role: "Track and recommend updates.", tools_needed: ["Luma", "Slack", "Email"], next_action: "Track growth" },
+  ];
+
+  return {
+    product_brain: {
+      summary: prompt || "Luma will learn the product and create a first-100-users workflow.",
+      positioning: "From one product prompt to a 7-day execution plan for your first 100 users.",
+      best_channels: ["X/Twitter", "LinkedIn", "Reddit", "Product Hunt", "Email", "Slack / communities"],
+      core_audience: ["Potential early customers", "People already discussing the problem", "Users of similar products"],
+    },
+    workflow: nodes,
+    flow_nodes: nodes,
+    daily_plan: Array.from({ length: 7 }, (_, index) => ({
+      day: index + 1,
+      daily_goal: `Day ${index + 1}: create conversations and move interested people toward feedback or early access.`,
+      platforms: ["X/Twitter", "LinkedIn", "Reddit", "Email", index > 3 ? "Product Hunt" : "Communities"],
+      x_posts: [
+        `Day ${index + 1}: sharing what I am learning while building ${productName}. The goal is to find people who feel this problem now and want a better workflow.`,
+        `Day ${index + 1}: first-100-users loop: publish, reply, ask for feedback, send useful outreach, track signals, improve the message.`,
+      ],
+      linkedin_post: `Day ${index + 1}: I am focusing on conversations over impressions while building ${productName}. The goal is to learn who has the problem and what would make them try it this week.`,
+      reddit_community_action: "Ask a feedback-first question or reply helpfully to existing problem threads. Do not post promotional copy.",
+      cold_outreach_task: "Send 10 personalized feedback requests to suggested customer segments.",
+      expected_output: "Drafts generated, approvals queued, replies tracked, and strategy notes updated.",
+      human_approval_needed: true,
+    })),
+    customer_discovery: [
+      {
+        segment: "Potential early customers",
+        where_to_find: ["LinkedIn role searches", "X keyword searches", "Reddit problem threads", "Product Hunt similar products", "Founder communities"],
+        linkedin_search_keywords: ["founder operations", "growth marketing", "manual workflow", "looking for tool"],
+        x_search_keywords: ["looking for a tool", "manual workflow", "need a better way", "feedback request"],
+        reddit_communities: ["r/SaaS", "r/startups", "r/Entrepreneur", "category-specific communities"],
+        product_hunt_audiences: ["Users of similar products", "Makers who upvote SaaS and productivity tools"],
+        founder_communities: ["Indie Hackers", "YC Startup School", "Slack founder groups", "newsletter communities"],
+      },
+    ],
+    execution_points: [
+      { id: "x-day-1", title: "Create Day 1 X posts", what_ai_will_do: "I will create 2 X posts for Day 1", platform: "X", requires_approval: true, output_preview: "Two X drafts for human review." },
+      { id: "linkedin-founder", title: "Create LinkedIn founder story", what_ai_will_do: "I will create 1 LinkedIn founder story post", platform: "LinkedIn", requires_approval: true, output_preview: "One LinkedIn draft for human review." },
+      { id: "profiles", title: "Find customer profiles", what_ai_will_do: "I will find customer profiles from LinkedIn, X, and Reddit", platform: "Discovery", requires_approval: false, output_preview: "Suggested search targets and keywords." },
+      { id: "emails", title: "Create cold email drafts", what_ai_will_do: "I will create cold email drafts", platform: "Email", requires_approval: true, output_preview: "Cold email drafts for approval." },
+      { id: "product-hunt", title: "Prepare Product Hunt launch copy", what_ai_will_do: "I will prepare Product Hunt launch copy", platform: "Product Hunt", requires_approval: true, output_preview: "Tagline, description, and maker comment." },
+      { id: "tracking", title: "Track growth", what_ai_will_do: "I will track replies, approvals, and growth", platform: "Luma", requires_approval: false, output_preview: "Status and first-100-users progress." },
+    ],
+    platform_content: [
+      { platform: "X", content_type: "Post set", draft: "Two daily posts that share progress, ask for feedback, and invite early users to reply.", owner: "AI draft, human approve", tool: "X" },
+      { platform: "LinkedIn", content_type: "Founder story", draft: "A professional founder-led update about the problem, the learning loop, and the first-100-users goal.", owner: "AI draft, human approve", tool: "LinkedIn" },
+      { platform: "Reddit", content_type: "Feedback prompt", draft: "A feedback-first community question that avoids promotional language and asks about the current workflow pain.", owner: "AI draft, human post", tool: "Reddit" },
+      { platform: "Email", content_type: "Cold outreach", draft: "A short personal email asking for feedback from people who match the suggested customer segment.", owner: "AI draft, human approve", tool: "Email" },
+    ],
+    human_tasks: [{ title: "Approve public content", reason: "Posts and emails should be reviewed before they are used." }],
+    ai_tasks: [{ title: "Generate 7-day execution plan", tool: "Luma" }, { title: "Create social and outreach drafts", tool: "Luma" }],
+    trace: ["Product prompt learned", "First-100-users plan generated", "Drafts prepared", "Approval gates added", "Tracking ready"],
+  };
+}
+
 function SlackLogo({ className = "h-5 w-5" }: { className?: string }) {
   return (
     <svg viewBox="0 0 122.8 122.8" className={className} aria-hidden="true">
@@ -484,6 +557,220 @@ function stringArray(value: unknown): string[] {
   return value.map(displayText).filter(Boolean);
 }
 
+const flowConnections = [
+  ["learn-product", "first-100"],
+  ["first-100", "platforms"],
+  ["platforms", "people"],
+  ["first-100", "daily-content"],
+  ["daily-content", "emails"],
+  ["people", "emails"],
+  ["emails", "approval"],
+  ["approval", "drafts"],
+  ["drafts", "growth"],
+  ["growth", "learn-product"],
+];
+
+function nodeTone(node: WorkflowNodeData) {
+  if (node.colorTone === "human" || node.owner === "human") {
+    return {
+      card: "border-[#e8dcc8] bg-[#fbf7ef]",
+      icon: "bg-[#efe6d8] text-[#7c5f3b]",
+      badge: "bg-[#efe6d8] text-[#7c5f3b]",
+      glow: "hover:border-[#d6b98d] hover:shadow-[0_18px_46px_rgba(124,95,59,0.14)]",
+    };
+  }
+
+  if (node.colorTone === "platform" || /X|LinkedIn|Reddit|Product Hunt/i.test(node.app)) {
+    return {
+      card: "border-[#c8e7df] bg-[#f0fbf8]",
+      icon: "bg-[#d9f5ee] text-[#0f766e]",
+      badge: "bg-[#dff7ef] text-[#0f766e]",
+      glow: "hover:border-[#80cbbb] hover:shadow-[0_18px_46px_rgba(15,118,110,0.14)]",
+    };
+  }
+
+  if (node.colorTone === "system" || node.owner === "system") {
+    return {
+      card: "border-[#ddd6fe] bg-[#f7f4ff]",
+      icon: "bg-[#ede9fe] text-[#6d5bd0]",
+      badge: "bg-[#ede9fe] text-[#6d5bd0]",
+      glow: "hover:border-[#b9a9f5] hover:shadow-[0_18px_46px_rgba(109,91,208,0.14)]",
+    };
+  }
+
+  return {
+    card: "border-[#f6d7a8] bg-[#fff8e8]",
+    icon: "bg-[#ffedc2] text-[#b45309]",
+    badge: "bg-[#ffedc2] text-[#92400e]",
+    glow: "hover:border-[#f0b85c] hover:shadow-[0_18px_46px_rgba(180,83,9,0.16)]",
+  };
+}
+
+function FlowchartBoard({
+  nodes,
+  selectedId,
+  onSelect,
+}: {
+  nodes: WorkflowNodeData[];
+  selectedId?: string;
+  onSelect: (node: WorkflowNodeData) => void;
+}) {
+  const byId = new Map(nodes.map((node) => [node.id, node]));
+
+  return (
+    <section className="rounded-2xl border border-[#d8e0ea] bg-[#fffaf0] p-4 shadow-[0_24px_70px_rgba(18,24,38,0.10)]">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#b45309]">Trace-style workflow</p>
+          <h2 className="mt-2 text-2xl font-semibold">First 100 users flowchart</h2>
+          <p className="mt-1 text-sm leading-6 text-[#526172]">Luma plans the strategy, does the repeatable work, and only asks humans for approval.</p>
+        </div>
+        <span className="rounded-full bg-white px-3 py-1.5 text-xs font-bold text-[#92400e] ring-1 ring-[#f6d365]">Draft-only until approved</span>
+      </div>
+
+      <div className="relative mt-5 min-h-[760px] overflow-hidden rounded-2xl border border-[#eadfbf] bg-[radial-gradient(#e8dcc8_1px,transparent_1px)] p-4 [background-size:22px_22px] md:min-h-[620px]">
+        <svg className="pointer-events-none absolute inset-0 hidden h-full w-full md:block" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          {flowConnections.map(([from, to]) => {
+            const start = byId.get(from);
+            const end = byId.get(to);
+            if (!start || !end) return null;
+            const x1 = (start.x ?? 10) + 8;
+            const y1 = (start.y ?? 10) + 5;
+            const x2 = (end.x ?? 10) + 8;
+            const y2 = (end.y ?? 10) + 5;
+            const midX = (x1 + x2) / 2;
+            return (
+              <path
+                key={`${from}-${to}`}
+                d={`M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`}
+                fill="none"
+                stroke="#d3b985"
+                strokeWidth="0.34"
+                strokeDasharray="1.2 1.5"
+                strokeLinecap="round"
+                opacity="0.86"
+              />
+            );
+          })}
+        </svg>
+
+        <div className="grid gap-3 md:block">
+          {nodes.map((node, index) => {
+            const tone = nodeTone(node);
+            const isSelected = selectedId === node.id;
+            return (
+              <motion.button
+                key={node.id}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.035 }}
+                onClick={() => onSelect(node)}
+                className={`group relative z-10 w-full rounded-2xl border p-4 text-left shadow-[0_10px_28px_rgba(18,24,38,0.08)] transition duration-200 hover:-translate-y-1 ${tone.card} ${tone.glow} ${
+                  isSelected ? "ring-4 ring-[#facc15]/35" : ""
+                } md:absolute md:w-[235px]`}
+                style={{
+                  left: `min(${node.x ?? 0}%, calc(100% - 245px))`,
+                  top: `${node.y ?? index * 10}%`,
+                }}
+              >
+                <div className="flex items-start gap-3">
+                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition duration-200 group-hover:rotate-6 group-hover:scale-110 ${tone.icon}`}>
+                    {node.owner === "human" ? <UserCheck className="h-5 w-5" /> : <Bot className="h-5 w-5" />}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm font-bold text-[#111827]">{node.title}</h3>
+                    <p className="mt-1 line-clamp-2 text-xs leading-5 text-[#526172]">{node.description}</p>
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  <span className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase ${tone.badge}`}>{node.owner}</span>
+                  <span className="rounded-full bg-white/75 px-2 py-1 text-[10px] font-bold text-[#526172] ring-1 ring-black/5">{node.app}</span>
+                  <span className="rounded-full bg-[#111827] px-2 py-1 text-[10px] font-bold capitalize text-white">{node.status}</span>
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <span className="rounded-lg border border-[#d8e0ea] bg-white/75 px-2.5 py-1.5 text-[11px] font-bold text-[#334155]">Show details</span>
+                  <span className="rounded-lg bg-[#111827] px-2.5 py-1.5 text-[11px] font-bold text-white">{node.execution_button_label || node.next_action || "Generate"}</span>
+                </div>
+              </motion.button>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function CommandCenter({
+  workflow,
+  statuses,
+  onStart,
+  onGenerate,
+  onApprove,
+  onCopy,
+  onSaveDraft,
+}: {
+  workflow: GeneratedWorkflow;
+  statuses: Record<string, LocalExecutionStatus>;
+  onStart: () => void;
+  onGenerate: (id: string, requiresApproval: boolean) => void;
+  onApprove: (id: string) => void;
+  onCopy: (text: string) => void;
+  onSaveDraft: (id: string) => void;
+}) {
+  const points = workflow.execution_points?.length
+    ? workflow.execution_points
+    : workflow.workflow.slice(0, 6).map((node) => ({
+        id: node.id,
+        title: node.title,
+        what_ai_will_do: `I will ${node.execution_button_label || node.next_action || node.title}`.replace("I will Generate", "I will generate"),
+        platform: node.app,
+        requires_approval: Boolean(node.requires_approval),
+        output_preview: node.outputs?.[0] || node.description,
+      }));
+
+  return (
+    <section className="rounded-2xl border border-[#eadfbf] bg-white/95 p-5 shadow-[0_18px_52px_rgba(18,24,38,0.08)]">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#b45309]">Command Center</p>
+          <h2 className="mt-2 text-xl font-semibold">Start execution</h2>
+          <p className="mt-1 text-sm leading-6 text-[#526172]">Public posts and emails require human approval first.</p>
+        </div>
+        <button onClick={onStart} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#111827] px-4 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5">
+          <Play className="h-4 w-4" />
+          Start execution
+        </button>
+      </div>
+
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
+        {points.map((point) => {
+          const status = statuses[point.id] ?? "pending";
+          return (
+            <div key={point.id} className="rounded-2xl border border-[#d8e0ea] bg-[#f8fafc] p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-bold text-[#111827]">{point.what_ai_will_do}</p>
+                  <p className="mt-1 text-xs font-semibold text-[#64748b]">{point.platform} · {point.requires_approval ? "Approval required" : "No public action"}</p>
+                </div>
+                <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold capitalize text-[#526172] ring-1 ring-[#d8e0ea]">{status.replace("_", " ")}</span>
+              </div>
+              <p className="mt-3 line-clamp-2 text-sm leading-6 text-[#526172]">{point.output_preview}</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button onClick={() => onGenerate(point.id, point.requires_approval)} className="rounded-lg bg-[#ffd84d] px-3 py-2 text-xs font-bold text-[#3f2d00]">Show / generate</button>
+                <button onClick={() => onCopy(point.output_preview)} className="inline-flex items-center gap-1.5 rounded-lg border border-[#d8e0ea] bg-white px-3 py-2 text-xs font-bold text-[#334155]"><Copy className="h-3.5 w-3.5" /> Copy</button>
+                <button onClick={() => onSaveDraft(point.id)} className="inline-flex items-center gap-1.5 rounded-lg border border-[#d8e0ea] bg-white px-3 py-2 text-xs font-bold text-[#334155]"><Save className="h-3.5 w-3.5" /> Save draft</button>
+                {status === "waiting_approval" ? (
+                  <button onClick={() => onApprove(point.id)} className="rounded-lg bg-[#0f766e] px-3 py-2 text-xs font-bold text-white">Approve</button>
+                ) : null}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 export default function DashboardPage() {
   const [prompt, setPrompt] = useState("");
   const [apiKey, setApiKey] = useState("");
@@ -492,6 +779,7 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState("");
   const [slackConnected, setSlackConnected] = useState(false);
+  const [executionStatuses, setExecutionStatuses] = useState<Record<string, LocalExecutionStatus>>({});
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -505,6 +793,60 @@ export default function DashboardPage() {
 
     setSlackConnected(connectedFromUrl || connectedFromStorage);
   }, []);
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem("luma_command_center_status");
+    if (!stored) return;
+
+    try {
+      setExecutionStatuses(JSON.parse(stored) as Record<string, LocalExecutionStatus>);
+    } catch {
+      setExecutionStatuses({});
+    }
+  }, []);
+
+  function updateExecutionStatuses(updater: (current: Record<string, LocalExecutionStatus>) => Record<string, LocalExecutionStatus>) {
+    setExecutionStatuses((current) => {
+      const next = updater(current);
+      window.localStorage.setItem("luma_command_center_status", JSON.stringify(next));
+      return next;
+    });
+  }
+
+  function startCommandCenter() {
+    if (!workflow) return;
+    const points = workflow.execution_points?.length ? workflow.execution_points : [];
+    const ids = points.length ? points.map((point) => point.id) : workflow.workflow.slice(0, 6).map((node) => node.id);
+    updateExecutionStatuses(() => Object.fromEntries(ids.map((id) => [id, "pending" as LocalExecutionStatus])));
+    setToast("Execution queue started. Luma will generate drafts and wait for approval before public actions.");
+    window.setTimeout(() => setToast(""), 3200);
+  }
+
+  function generateExecutionPoint(id: string, requiresApproval: boolean) {
+    updateExecutionStatuses((current) => ({ ...current, [id]: "running" }));
+    window.setTimeout(() => {
+      updateExecutionStatuses((current) => ({
+        ...current,
+        [id]: requiresApproval ? "waiting_approval" : "completed",
+      }));
+    }, 650);
+  }
+
+  function approveExecutionPoint(id: string) {
+    updateExecutionStatuses((current) => ({ ...current, [id]: "approved" }));
+  }
+
+  async function copyExecutionText(text: string) {
+    await navigator.clipboard?.writeText(text);
+    setToast("Copied draft preview.");
+    window.setTimeout(() => setToast(""), 2200);
+  }
+
+  function saveDraft(id: string) {
+    updateExecutionStatuses((current) => ({ ...current, [id]: current[id] === "waiting_approval" ? "waiting_approval" : "completed" }));
+    setToast("Draft saved locally. Public posting still requires approval.");
+    window.setTimeout(() => setToast(""), 2600);
+  }
 
   async function generateWorkflow() {
     const trimmedPrompt = prompt.trim();
@@ -532,11 +874,15 @@ export default function DashboardPage() {
 
       const data = (await response.json()) as GeneratedWorkflow;
       setWorkflow(data);
+      setExecutionStatuses({});
+      window.localStorage.removeItem("luma_command_center_status");
       window.localStorage.setItem("luma_execution_workflow", JSON.stringify(data));
       window.localStorage.setItem("luma_execution_prompt", trimmedPrompt);
     } catch {
-      const fallbackWorkflow = makeFallbackWorkflow(trimmedPrompt);
+      const fallbackWorkflow = makeFirst100FallbackWorkflow(trimmedPrompt);
       setWorkflow(fallbackWorkflow);
+      setExecutionStatuses({});
+      window.localStorage.removeItem("luma_command_center_status");
       window.localStorage.setItem("luma_execution_workflow", JSON.stringify(fallbackWorkflow));
       window.localStorage.setItem("luma_execution_prompt", trimmedPrompt);
       setToast("Demo workflow generated. Add OPENAI_API_KEY in .env.local for live generation.");
@@ -652,98 +998,70 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                <div className="grid gap-3">
-                  {workflow.workflow.map((step, index) => {
-                    const expandedStep = step as ExpandedWorkflowNode;
-                    const isHuman = expandedStep.owner === "human";
+                <FlowchartBoard
+                  nodes={workflow.flow_nodes?.length ? workflow.flow_nodes : workflow.workflow}
+                  selectedId={selectedStep?.id}
+                  onSelect={(node) => setSelectedStep(node as ExpandedWorkflowNode)}
+                />
 
-                    return (
-                      <button
-                        key={`${expandedStep.id}-${expandedStep.title}`}
-                        onClick={() => setSelectedStep(expandedStep)}
-                        className="group rounded-2xl border border-[#d8e0ea] bg-white/92 p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-                      >
-                        <div className="flex gap-3">
-                          <span
-                            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
-                              isHuman
-                                ? "bg-[#eef2f7] text-[#334155]"
-                                : "bg-[#ecfdf5] text-[#0f766e]"
-                            }`}
-                          >
-                            {isHuman ? (
-                              <UserCheck className="h-5 w-5" />
-                            ) : (
-                              <Bot className="h-5 w-5" />
-                            )}
-                          </span>
+                <CommandCenter
+                  workflow={workflow}
+                  statuses={executionStatuses}
+                  onStart={startCommandCenter}
+                  onGenerate={generateExecutionPoint}
+                  onApprove={approveExecutionPoint}
+                  onCopy={copyExecutionText}
+                  onSaveDraft={saveDraft}
+                />
 
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-start justify-between gap-3">
-                              <h3 className="font-semibold">
-                                {expandedStep.title}
-                              </h3>
+                {workflow.daily_plan?.length ? (
+                  <section className="rounded-2xl border border-[#d8e0ea] bg-white/92 p-5 shadow-sm">
+                    <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#0f766e]">7-day plan</p>
+                    <div className="mt-4 grid gap-3 md:grid-cols-2">
+                      {workflow.daily_plan.map((day) => (
+                        <div key={day.day} className="rounded-2xl border border-[#eadfbf] bg-[#fffaf0] p-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <h3 className="text-sm font-bold text-[#111827]">Day {day.day}: {day.daily_goal}</h3>
+                            <span className="rounded-full bg-white px-2 py-1 text-[11px] font-bold text-[#92400e] ring-1 ring-[#f6d365]">{day.human_approval_needed ? "Approval" : "AI"}</span>
+                          </div>
+                          <div className="mt-3 flex flex-wrap gap-1.5">
+                            {day.platforms.map((platform) => (
+                              <span key={`${day.day}-${platform}`} className="rounded-full bg-[#ecfdf5] px-2 py-1 text-[11px] font-bold text-[#0f766e]">{platform}</span>
+                            ))}
+                          </div>
+                          <ul className="mt-3 space-y-2 text-sm leading-6 text-[#526172]">
+                            {day.x_posts.slice(0, 2).map((post, index) => <li key={index}>X {index + 1}: {post}</li>)}
+                            <li>LinkedIn: {day.linkedin_post}</li>
+                            <li>Reddit/community: {day.reddit_community_action}</li>
+                            <li>Email: {day.cold_outreach_task}</li>
+                          </ul>
+                          <p className="mt-3 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-[#64748b]">{day.expected_output}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                ) : null}
 
-                              <span className="rounded-full bg-[#f1f5f9] px-2.5 py-1 text-xs font-bold text-[#64748b]">
-                                {String(index + 1).padStart(2, "0")}
-                              </span>
-                            </div>
-
-                            <p className="mt-1 text-sm leading-6 text-[#526172]">
-                              {expandedStep.description}
-                            </p>
-
-                            <div className="mt-3 max-h-0 overflow-hidden rounded-xl border border-transparent bg-[#f8fafc] p-0 opacity-0 transition-all duration-300 group-hover:max-h-[18rem] group-hover:border-[#d8e0ea] group-hover:p-3 group-hover:opacity-100">
-                              <p className="text-xs font-bold uppercase tracking-[0.1em] text-[#64748b]">
-                                More detail
-                              </p>
-                              <p className="mt-1 text-xs leading-5 text-[#526172]">
-                                {expandedStep.hover_summary ||
-                                  "Hover to see the full strategy for this step."}
-                              </p>
-
-                              {stringArray(expandedStep.expanded_details)
-                                .slice(0, 3)
-                                .length > 0 ? (
-                                <ul className="mt-2 space-y-1.5">
-                                  {stringArray(expandedStep.expanded_details)
-                                    .slice(0, 3)
-                                    .map((detail, detailIndex) => (
-                                      <li
-                                        key={`${expandedStep.id}-hover-${detailIndex}`}
-                                        className="text-[11px] leading-5 text-[#526172]"
-                                      >
-                                        {detail}
-                                      </li>
-                                    ))}
-                                </ul>
-                              ) : null}
-                            </div>
-
-                            <div className="mt-3 flex flex-wrap gap-2">
-                              <span className="inline-flex items-center gap-1 rounded-full bg-[#f8fafc] px-2.5 py-1 text-xs font-bold text-[#334155]">
-                                {isHuman ? (
-                                  <UserCheck className="h-3.5 w-3.5" />
-                                ) : (
-                                  <CheckCircle2 className="h-3.5 w-3.5" />
-                                )}
-                                {isHuman
-                                  ? "Human"
-                                  : expandedStep.owner === "system"
-                                    ? "Tracking"
-                                    : "AI"}
-                              </span>
-
-                              <span className="rounded-full bg-[#f8fafc] px-2.5 py-1 text-xs font-bold text-[#334155]">
-                                {expandedStep.app}
-                              </span>
-                            </div>
+                {workflow.customer_discovery?.length ? (
+                  <section className="rounded-2xl border border-[#d8e0ea] bg-white/92 p-5 shadow-sm">
+                    <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#0f766e]">Customer discovery</p>
+                    <p className="mt-2 text-sm leading-6 text-[#526172]">Suggested search targets, potential customer segments, people to look for, and search keywords. Luma does not claim live scraping unless an API is connected.</p>
+                    <div className="mt-4 grid gap-3 md:grid-cols-2">
+                      {workflow.customer_discovery.map((target) => (
+                        <div key={target.segment} className="rounded-2xl border border-[#d8e0ea] bg-[#f8fafc] p-4">
+                          <h3 className="font-bold text-[#111827]">{target.segment}</h3>
+                          <div className="mt-3 grid gap-3 text-xs leading-5 text-[#526172]">
+                            <p><strong>LinkedIn:</strong> {target.linkedin_search_keywords.join(", ")}</p>
+                            <p><strong>X:</strong> {target.x_search_keywords.join(", ")}</p>
+                            <p><strong>Reddit:</strong> {target.reddit_communities.join(", ")}</p>
+                            <p><strong>Product Hunt:</strong> {target.product_hunt_audiences.join(", ")}</p>
+                            <p><strong>Founder communities:</strong> {target.founder_communities.join(", ")}</p>
                           </div>
                         </div>
-                      </button>
-                    );
-                  })}
-                </div>
+                      ))}
+                    </div>
+                  </section>
+                ) : null}
               </motion.section>
             ) : null}
           </section>

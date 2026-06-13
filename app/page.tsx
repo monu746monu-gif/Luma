@@ -125,7 +125,13 @@ const fadeUp = {
   visible: { opacity: 1, y: 0 },
 };
 
-function Pill({ children, tone = "warm" }: { children: React.ReactNode; tone?: "warm" | "ai" | "human" }) {
+function Pill({
+  children,
+  tone = "warm",
+}: {
+  children: React.ReactNode;
+  tone?: "warm" | "ai" | "human";
+}) {
   const tones = {
     warm: "border-amber-200 bg-amber-50 text-amber-900",
     ai: "border-orange-200 bg-orange-50 text-orange-900",
@@ -139,13 +145,22 @@ function Pill({ children, tone = "warm" }: { children: React.ReactNode; tone?: "
   );
 }
 
+function Highlight({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="relative inline-block">
+      <span className="relative z-10">{children}</span>
+      <span className="absolute bottom-1 left-0 z-0 h-3 w-full rounded-full bg-yellow-300/80" />
+    </span>
+  );
+}
+
 function SectionHeading({
   eyebrow,
   title,
   copy,
 }: {
   eyebrow: string;
-  title: string;
+  title: React.ReactNode;
   copy?: string;
 }) {
   return (
@@ -158,7 +173,9 @@ function SectionHeading({
       className="mx-auto max-w-3xl text-center"
     >
       <Pill>{eyebrow}</Pill>
-      <h2 className="mt-5 text-3xl font-semibold tracking-tight text-ink sm:text-5xl">{title}</h2>
+      <h2 className="mt-5 text-3xl font-semibold tracking-tight text-ink sm:text-5xl">
+        {title}
+      </h2>
       {copy ? <p className="mt-5 text-lg leading-8 text-umber/80">{copy}</p> : null}
     </motion.div>
   );
@@ -170,6 +187,7 @@ function WorkflowPreview() {
       initial={{ opacity: 0, scale: 0.96, y: 20 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ duration: 0.7, delay: 0.15 }}
+      whileHover={{ y: -8, scale: 1.015 }}
       className="relative mx-auto w-full max-w-xl rounded-lg border border-white/70 bg-white/75 p-4 shadow-premium backdrop-blur md:p-5"
     >
       <div className="absolute -right-4 -top-5 hidden rounded-full bg-amberSoft px-4 py-2 text-xs font-bold text-white shadow-card sm:block">
@@ -194,6 +212,7 @@ function WorkflowPreview() {
                 key={item.label}
                 initial={{ opacity: 0, x: 18 }}
                 animate={{ opacity: 1, x: 0 }}
+                whileHover={{ x: 8, scale: 1.02 }}
                 transition={{ delay: 0.25 + index * 0.1, duration: 0.45 }}
                 className="relative flex items-center gap-3 rounded-lg border border-amber-100 bg-white px-4 py-3 shadow-sm"
               >
@@ -227,7 +246,11 @@ function WorkflowColumn({
   const isAi = tone === "ai";
 
   return (
-    <div className="rounded-lg border border-white/80 bg-white/80 p-4 shadow-card backdrop-blur sm:p-5">
+    <motion.div
+      whileHover={{ y: -6 }}
+      transition={{ type: "spring", stiffness: 220, damping: 18 }}
+      className="rounded-lg border border-white/80 bg-white/80 p-4 shadow-card backdrop-blur sm:p-5"
+    >
       <div className="mb-4 flex items-center justify-between gap-3">
         <h3 className="text-lg font-semibold text-ink">{title}</h3>
         <Pill tone={tone}>{label}</Pill>
@@ -240,11 +263,12 @@ function WorkflowColumn({
               key={task.title}
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
+              whileHover={{ x: 6, scale: 1.015 }}
               transition={{ delay: index * 0.06, duration: 0.35 }}
-              className="flex items-center gap-3 rounded-lg border border-amber-100 bg-cream p-4"
+              className="group flex items-center gap-3 rounded-lg border border-amber-100 bg-cream p-4 transition hover:border-amber-300 hover:bg-white hover:shadow-card"
             >
               <span
-                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition group-hover:scale-110 group-hover:rotate-3 ${
                   isAi ? "bg-orange-100 text-orange-800" : "bg-stone-100 text-stone-800"
                 }`}
               >
@@ -267,7 +291,7 @@ function WorkflowColumn({
           );
         })}
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -308,12 +332,11 @@ export default function Home() {
             Marketing workflows, generated from one product prompt.
           </h1>
           <p className={`${heroAccentFont.className} mt-6 max-w-2xl text-lg leading-8 text-black sm:text-xl`}>
-            Luma learns your product using Slack, and builds the
+            Luma learns your product using Slack, and builds the{" "}
             <span className="bg-[#fde68a] px-1.5 py-0.5 text-black">
               full marketing workflow
             </span>
-            , assigns approval work to humans, and lets AI handle the rest
-            - from creating posts and emails to finding customers, tracking growth, and improving your launch strategy.
+            , assigns approval work to humans, and lets AI handle the rest — from creating posts and emails to finding customers, tracking growth, and improving your launch strategy.
           </p>
           <p className="mt-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.16em] text-amberSoft">
             Get your first 100 users with
@@ -362,7 +385,11 @@ export default function Home() {
         <div className="mx-auto max-w-7xl">
           <SectionHeading
             eyebrow="Product problem"
-            title="Building is easy. Distribution is the hard part."
+            title={
+              <>
+                Building is easy. <Highlight>Distribution</Highlight> is the hard part.
+              </>
+            }
             copy="Most founders can ship fast, but then get stuck on who to reach, where to post, what to say, and how to keep the launch moving. Luma gives them one AI workspace for distribution instead of scattered tools and random prompts."
           />
           <div className="mt-12 grid gap-5 md:grid-cols-3">
@@ -374,11 +401,13 @@ export default function Home() {
                   variants={fadeUp}
                   initial="hidden"
                   whileInView="visible"
+                  whileHover={{ y: -10, scale: 1.025 }}
                   viewport={{ once: true, margin: "-80px" }}
                   transition={{ duration: 0.45, delay: index * 0.08 }}
-                  className="rounded-lg border border-white/80 bg-white/75 p-6 shadow-card backdrop-blur"
+                  className="group relative overflow-hidden rounded-lg border border-white/80 bg-white/75 p-6 shadow-card backdrop-blur transition hover:border-amber-200 hover:bg-white hover:shadow-premium"
                 >
-                  <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-amber-100 text-amber-900">
+                  <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-yellow-300 via-amberSoft to-orange-400 opacity-0 transition group-hover:opacity-100" />
+                  <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-amber-100 text-amber-900 transition group-hover:scale-110 group-hover:rotate-3 group-hover:bg-yellow-200">
                     <Icon className="h-6 w-6" />
                   </span>
                   <h3 className="mt-6 text-xl font-semibold text-ink">{card.title}</h3>
@@ -392,7 +421,14 @@ export default function Home() {
 
       <section className="px-5 py-20 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <SectionHeading eyebrow="How it works" title="From product idea to launch system." />
+          <SectionHeading
+            eyebrow="How it works"
+            title={
+              <>
+                From product <Highlight>idea to launch</Highlight> system.
+              </>
+            }
+          />
           <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {howItWorks.map((step, index) => {
               const Icon = step.icon;
@@ -402,15 +438,19 @@ export default function Home() {
                   variants={fadeUp}
                   initial="hidden"
                   whileInView="visible"
+                  whileHover={{ y: -10, scale: 1.03 }}
                   viewport={{ once: true, margin: "-80px" }}
                   transition={{ duration: 0.45, delay: index * 0.08 }}
-                  className="relative rounded-lg border border-amber-100 bg-cream p-6 shadow-card"
+                  className="group relative overflow-hidden rounded-lg border border-amber-100 bg-cream p-6 shadow-card transition hover:border-yellow-300 hover:bg-white hover:shadow-premium"
                 >
+                  <div className="absolute -right-10 -top-10 h-24 w-24 rounded-full bg-yellow-200/50 opacity-0 blur-2xl transition group-hover:opacity-100" />
                   <div className="flex items-center justify-between">
-                    <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-white text-amber-800 shadow-sm">
+                    <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-white text-amber-800 shadow-sm transition group-hover:scale-110 group-hover:rotate-3 group-hover:bg-yellow-100">
                       <Icon className="h-6 w-6" />
                     </span>
-                    <span className="text-sm font-bold text-amber-800">0{index + 1}</span>
+                    <span className="text-sm font-bold text-amber-800 transition group-hover:text-orange-700">
+                      0{index + 1}
+                    </span>
                   </div>
                   <h3 className="mt-6 text-lg font-semibold text-ink">{step.title}</h3>
                   <p className="mt-3 text-sm leading-6 text-umber/75">{step.copy}</p>
@@ -450,58 +490,76 @@ export default function Home() {
           <SectionHeading
             eyebrow="Demo"
             title="Generate a marketing strategy and workflow."
-            copy="Use Slack or manual product details, then let Luma plan channels, assign people, create drafts, and track execution."
+            copy="Give Luma one product prompt. It plans the launch, creates AI tasks, asks humans for approval, and tracks every step."
           />
 
-          <div className="mt-12 rounded-lg border border-white/80 bg-white/75 p-5 shadow-premium backdrop-blur sm:p-8">
-            <div className="grid gap-5 md:grid-cols-2">
-              <label className="block">
-                <span className="text-sm font-semibold text-umber">Product name</span>
-                <input
-                  defaultValue="AgentDock"
-                  className="mt-2 w-full rounded-lg border border-amber-100 bg-cream px-4 py-3 text-sm font-medium text-ink outline-none transition focus:border-amberSoft focus:ring-4 focus:ring-amber-100"
-                />
-              </label>
-              <label className="block">
-                <span className="text-sm font-semibold text-umber">Target audience</span>
-                <input
-                  defaultValue="AI builders, indie hackers, developers"
-                  className="mt-2 w-full rounded-lg border border-amber-100 bg-cream px-4 py-3 text-sm font-medium text-ink outline-none transition focus:border-amberSoft focus:ring-4 focus:ring-amber-100"
-                />
-              </label>
-              <label className="block md:col-span-2">
-                <span className="text-sm font-semibold text-umber">Product description</span>
-                <textarea
-                  defaultValue="Shared memory layer for AI agents"
-                  rows={3}
-                  className="mt-2 w-full resize-none rounded-lg border border-amber-100 bg-cream px-4 py-3 text-sm font-medium text-ink outline-none transition focus:border-amberSoft focus:ring-4 focus:ring-amber-100"
-                />
-              </label>
-              <label className="block md:col-span-2">
-                <span className="text-sm font-semibold text-umber">Success goal</span>
-                <input
-                  defaultValue="Get first 100 users"
-                  className="mt-2 w-full rounded-lg border border-amber-100 bg-cream px-4 py-3 text-sm font-medium text-ink outline-none transition focus:border-amberSoft focus:ring-4 focus:ring-amber-100"
-                />
-              </label>
+          <motion.div
+            whileHover={{ y: -6 }}
+            transition={{ type: "spring", stiffness: 220, damping: 18 }}
+            className="mt-12 overflow-hidden rounded-lg border border-white/80 bg-white/75 shadow-premium backdrop-blur"
+          >
+            <div className="border-b border-amber-100 bg-gradient-to-r from-amber-50 via-white to-orange-50 p-5 sm:p-8">
+              <div className="flex flex-col justify-between gap-5 md:flex-row md:items-center">
+                <div>
+                  <Pill>One prompt demo</Pill>
+                  <h3 className="mt-4 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
+                    “Launch my product and get my first 100 users.”
+                  </h3>
+                  <p className="mt-3 max-w-2xl text-sm leading-7 text-umber/75">
+                    Luma reads the product context, builds the distribution workflow,
+                    creates AI execution tasks, and pauses only when a human approval is needed.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => setWorkflowVisible(true)}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-ink px-6 py-3.5 text-sm font-bold text-amber-50 shadow-card transition hover:-translate-y-0.5 hover:bg-[#38271d] sm:w-auto"
+                >
+                  Generate Flow
+                  <Send className="h-4 w-4" />
+                </button>
+              </div>
             </div>
 
-            <div className="mt-6 flex flex-col items-start justify-between gap-4 border-t border-amber-100 pt-6 sm:flex-row sm:items-center">
-              <div className="flex items-center gap-3 text-sm text-umber/70">
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 text-amber-900">
-                  <Bot className="h-4 w-4" />
-                </span>
-                Luma will organize the workflow into AI work and human approvals.
-              </div>
-              <button
-                onClick={() => setWorkflowVisible(true)}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-ink px-6 py-3.5 text-sm font-bold text-amber-50 shadow-card transition hover:-translate-y-0.5 hover:bg-[#38271d] sm:w-auto"
-              >
-                Generate Flow
-                <Send className="h-4 w-4" />
-              </button>
+            <div className="grid gap-4 p-5 sm:grid-cols-3 sm:p-8">
+              {[
+                {
+                  title: "Product memory",
+                  copy: "Slack or manual context becomes reusable launch memory.",
+                  icon: BrainCircuit,
+                },
+                {
+                  title: "AI execution",
+                  copy: "Luma writes posts, drafts emails, researches channels, and builds the calendar.",
+                  icon: Bot,
+                },
+                {
+                  title: "Human approvals",
+                  copy: "Founders approve positioning, emails, and public posts before anything goes out.",
+                  icon: UserCheck,
+                },
+              ].map((card, index) => {
+                const Icon = card.icon;
+                return (
+                  <motion.div
+                    key={card.title}
+                    initial={{ opacity: 0, y: 16 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    whileHover={{ y: -8, scale: 1.025 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.4, delay: index * 0.08 }}
+                    className="group rounded-lg border border-amber-100 bg-cream p-5 transition hover:border-yellow-300 hover:bg-white hover:shadow-card"
+                  >
+                    <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-white text-amber-800 shadow-sm transition group-hover:scale-110 group-hover:rotate-3 group-hover:bg-yellow-100">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <h4 className="mt-5 text-base font-semibold text-ink">{card.title}</h4>
+                    <p className="mt-2 text-sm leading-6 text-umber/75">{card.copy}</p>
+                  </motion.div>
+                );
+              })}
             </div>
-          </div>
+          </motion.div>
 
           <AnimatePresence>
             {workflowVisible ? (
@@ -530,7 +588,11 @@ export default function Home() {
               and how product memory changed after approval.
             </p>
           </div>
-          <div className="rounded-lg border border-white/80 bg-white/75 p-5 shadow-premium backdrop-blur sm:p-7">
+          <motion.div
+            whileHover={{ y: -6 }}
+            transition={{ type: "spring", stiffness: 220, damping: 18 }}
+            className="rounded-lg border border-white/80 bg-white/75 p-5 shadow-premium backdrop-blur sm:p-7"
+          >
             <div className="space-y-4">
               {traceItems.map((item, index) => (
                 <motion.div
@@ -538,14 +600,15 @@ export default function Home() {
                   variants={fadeUp}
                   initial="hidden"
                   whileInView="visible"
+                  whileHover={{ x: 8, scale: 1.015 }}
                   viewport={{ once: true, margin: "-60px" }}
                   transition={{ delay: index * 0.08, duration: 0.4 }}
-                  className="relative flex gap-4 rounded-lg border border-amber-100 bg-cream p-4"
+                  className="group relative flex gap-4 rounded-lg border border-amber-100 bg-cream p-4 transition hover:border-yellow-300 hover:bg-white hover:shadow-card"
                 >
                   {index < traceItems.length - 1 ? (
                     <span className="absolute left-[1.85rem] top-12 h-7 w-px bg-amber-200" />
                   ) : null}
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-amber-800 shadow-sm">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-amber-800 shadow-sm transition group-hover:scale-110 group-hover:bg-yellow-100">
                     <CircleDot className="h-4 w-4" />
                   </span>
                   <div>
@@ -555,7 +618,7 @@ export default function Home() {
                 </motion.div>
               ))}
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 

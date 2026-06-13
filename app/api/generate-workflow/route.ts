@@ -21,6 +21,7 @@ type DetailedWorkflowNodeData = WorkflowNodeData & {
 
 type DetailedGeneratedWorkflow = Omit<GeneratedWorkflow, "workflow"> & {
   workflow: DetailedWorkflowNodeData[];
+  flow_nodes?: DetailedWorkflowNodeData[];
 };
 
 function safeArray<T>(value: T[] | undefined): T[] {
@@ -64,8 +65,80 @@ function limitWords(text: string, maxWords = MAX_POST_WORDS) {
   return words.slice(0, maxWords).join(" ");
 }
 
+function normalizeNode(node: DetailedWorkflowNodeData, index: number): DetailedWorkflowNodeData {
+  const owner =
+    node.owner === "human" || node.owner === "system"
+      ? node.owner
+      : "ai";
+
+  return {
+    id: String(node.id ?? index + 1),
+    title: node.title ?? `Workflow task ${index + 1}`,
+    description:
+      node.description ??
+      "A concrete step in the human + AI first-100-users workflow.",
+    owner,
+    agent: node.agent ?? "Luma Agent",
+    status: node.status ?? "ready",
+    app: node.app ?? "Luma",
+    icon: node.icon ?? "bot",
+    x: typeof node.x === "number" ? node.x : undefined,
+    y: typeof node.y === "number" ? node.y : undefined,
+    layoutGroup: node.layoutGroup ?? undefined,
+    colorTone:
+      node.colorTone ??
+      (owner === "human" ? "human" : owner === "system" ? "system" : "ai"),
+    action_type: node.action_type ?? "generate",
+    requires_approval:
+      typeof node.requires_approval === "boolean"
+        ? node.requires_approval
+        : owner === "human",
+    detailed_plan: toStringArray(node.detailed_plan).length
+      ? toStringArray(node.detailed_plan)
+      : toStringArray(node.expanded_details),
+    execution_button_label:
+      node.execution_button_label ?? node.next_action ?? "Generate",
+
+    hover_summary:
+      node.hover_summary ??
+      "Luma explains what happens in this step, what AI will do, and where human approval is needed.",
+
+    expanded_details: toStringArray(node.expanded_details).length
+      ? toStringArray(node.expanded_details)
+      : [
+          "Understand the current product and audience context.",
+          "Create practical outputs for this first-100-users workflow stage.",
+          "Separate AI work from human approval work.",
+          "Update the trace timeline after completion.",
+        ],
+
+    outputs: toStringArray(node.outputs).length
+      ? toStringArray(node.outputs)
+      : ["Workflow output", "Next action", "Trace update"],
+
+    human_role:
+      node.human_role ??
+      "Review, approve, or edit the output before it becomes public or final.",
+
+    ai_role:
+      node.ai_role ??
+      "Generate drafts, research, structure, and repeatable execution tasks.",
+
+    tools_needed: toStringArray(node.tools_needed).length
+      ? toStringArray(node.tools_needed)
+      : [node.app ?? "Luma"],
+
+    next_action: node.next_action ?? node.execution_button_label ?? "Run this step",
+  };
+}
+
 function normalizeWorkflow(data: DetailedGeneratedWorkflow): DetailedGeneratedWorkflow {
-  const workflow = Array.isArray(data.workflow) ? data.workflow.slice(0, 9) : [];
+  const sourceWorkflow = Array.isArray(data.flow_nodes) && data.flow_nodes.length
+    ? data.flow_nodes
+    : Array.isArray(data.workflow)
+      ? data.workflow
+      : [];
+  const workflow = sourceWorkflow.slice(0, 9).map(normalizeNode);
   const platformContent = Array.isArray(data.platform_content)
     ? data.platform_content.slice(0, 12)
     : [];
@@ -82,52 +155,45 @@ function normalizeWorkflow(data: DetailedGeneratedWorkflow): DetailedGeneratedWo
         : [],
     },
 
-    workflow: workflow.map((node, index): DetailedWorkflowNodeData => ({
-      id: String(node.id ?? index + 1),
-      title: node.title ?? `Workflow task ${index + 1}`,
-      description:
-        node.description ??
-        "A concrete step in the human + AI marketing workflow.",
-      owner:
-        node.owner === "human" || node.owner === "system"
-          ? node.owner
-          : "ai",
-      agent: node.agent ?? "Luma Agent",
-      status: node.status ?? "ready",
-      app: node.app ?? "Luma",
-      icon: node.icon ?? "bot",
+    workflow,
+    flow_nodes: workflow,
 
-      hover_summary:
-        node.hover_summary ??
-        "Luma explains what happens in this step, what AI will do, and where human approval is needed.",
+    daily_plan: Array.isArray(data.daily_plan)
+      ? data.daily_plan.slice(0, 7).map((day, index) => ({
+          day: Number(day.day ?? index + 1),
+          daily_goal: day.daily_goal ?? `Day ${index + 1} acquisition goal`,
+          platforms: toStringArray(day.platforms),
+          x_posts: toStringArray(day.x_posts).slice(0, 2),
+          linkedin_post: day.linkedin_post ?? "",
+          reddit_community_action: day.reddit_community_action ?? "",
+          cold_outreach_task: day.cold_outreach_task ?? "",
+          expected_output: day.expected_output ?? "",
+          human_approval_needed: Boolean(day.human_approval_needed),
+        }))
+      : [],
 
-      expanded_details: toStringArray(node.expanded_details).length
-        ? toStringArray(node.expanded_details)
-        : [
-            "Understand the current launch context.",
-            "Create practical outputs for this workflow stage.",
-            "Separate AI work from human approval work.",
-            "Update the trace timeline after completion.",
-          ],
+    customer_discovery: Array.isArray(data.customer_discovery)
+      ? data.customer_discovery.slice(0, 6).map((target) => ({
+          segment: target.segment ?? "Potential customer segment",
+          where_to_find: toStringArray(target.where_to_find),
+          linkedin_search_keywords: toStringArray(target.linkedin_search_keywords),
+          x_search_keywords: toStringArray(target.x_search_keywords),
+          reddit_communities: toStringArray(target.reddit_communities),
+          product_hunt_audiences: toStringArray(target.product_hunt_audiences),
+          founder_communities: toStringArray(target.founder_communities),
+        }))
+      : [],
 
-      outputs: toStringArray(node.outputs).length
-        ? toStringArray(node.outputs)
-        : ["Workflow output", "Next action", "Trace update"],
-
-      human_role:
-        node.human_role ??
-        "Review, approve, or edit the output before it becomes public or final.",
-
-      ai_role:
-        node.ai_role ??
-        "Generate drafts, research, structure, and repeatable execution tasks.",
-
-      tools_needed: toStringArray(node.tools_needed).length
-        ? toStringArray(node.tools_needed)
-        : [node.app ?? "Luma"],
-
-      next_action: node.next_action ?? "Run this step",
-    })),
+    execution_points: Array.isArray(data.execution_points)
+      ? data.execution_points.slice(0, 12).map((point, index) => ({
+          id: String(point.id ?? `execution-${index + 1}`),
+          title: point.title ?? `Execution point ${index + 1}`,
+          what_ai_will_do: point.what_ai_will_do ?? point.title ?? "Luma will generate the requested output.",
+          platform: point.platform ?? "Luma",
+          requires_approval: Boolean(point.requires_approval),
+          output_preview: point.output_preview ?? "Draft output will appear here.",
+        }))
+      : [],
 
     platform_content: platformContent.map((item) => ({
       platform: item.platform ?? "Platform",
@@ -161,371 +227,400 @@ function extractJson(text: string) {
 
 function buildFallback(input: ProductInput): DetailedGeneratedWorkflow {
   const productName = input.productName || "Your product";
-
-  return normalizeWorkflow({
-    product_brain: {
-      summary: `${productName} is ready for a structured launch workflow. Luma will turn the product context into launch strategy, content, approvals, scheduling, outreach, and tracking.`,
-      positioning: `${productName} should be positioned around one clear pain point, one specific audience, and one strong outcome. The launch should explain why the product matters now, who it helps, and what users can do after trying it.`,
-      best_channels: [
-        "Product Hunt — best for public launch discovery and early builder attention",
-        "X/Twitter — best for founder-led storytelling, launch threads, and real-time updates",
-        "LinkedIn — best for professional credibility and SaaS/product storytelling",
-        "Reddit — best for feedback-driven community discovery without sounding like an ad",
-        "Email — best for direct outreach to expected customers and early supporters",
+  const audience = input.targetAudience || "early adopters who already feel the problem";
+  const nodes: DetailedWorkflowNodeData[] = [
+    {
+      id: "learn-product",
+      title: "Learn Product Context",
+      description: "Luma reads the prompt and Slack context to understand the product, audience, and offer.",
+      owner: "ai",
+      agent: "Product Brain Agent",
+      status: "ready",
+      app: "Slack + Luma",
+      icon: "brain",
+      x: 5,
+      y: 35,
+      layoutGroup: "input",
+      colorTone: "ai",
+      action_type: "generate",
+      requires_approval: false,
+      execution_button_label: "Generate product brain",
+      hover_summary: "Luma turns the prompt and connected Slack context into product memory. It extracts the problem, target audience, promise, proof points, and constraints before creating any public content.",
+      expanded_details: [
+        "Summarize the product, target audience, category, and current stage.",
+        "Pull useful Slack context only when Slack is connected.",
+        "Identify the strongest pain point and first credible promise.",
+        "List assumptions that need human confirmation.",
+        "Prepare context for the first-100-users strategy.",
       ],
-      core_audience: [
-        input.targetAudience || "early adopters who already feel the problem",
-        "builders, founders, and users already searching for a better workflow",
-        "people active in communities around this product category",
-      ],
+      outputs: ["Product summary", "Audience assumptions", "Positioning notes"],
+      human_role: "Confirm any assumptions that affect public claims.",
+      ai_role: "Extract product context and turn it into reusable memory.",
+      tools_needed: ["Luma", "Slack"],
+      next_action: "Generate product brain",
     },
-
-    workflow: [
       {
-        id: "1",
-        title: "Define Launch Strategy",
-        description:
-          "Luma creates the launch angle, Product Hunt plan, required assets, and channel strategy.",
+        id: "first-100-strategy",
+        title: "Define First 100 Users Strategy",
+        description: "Luma creates a 7-day acquisition plan aimed at the first 100 users.",
         owner: "ai",
-        agent: "Luma Strategy Agent",
+        agent: "Growth Strategy Agent",
         status: "ready",
         app: "Luma",
         icon: "rocket",
-        hover_summary:
-          "Luma studies the product, audience, launch goal, and category to build the full launch direction. It defines the Product Hunt angle, the launch assets, and the first channels the product should use.",
+        x: 29,
+        y: 12,
+        layoutGroup: "strategy",
+        colorTone: "ai",
+        action_type: "generate",
+        requires_approval: false,
+        execution_button_label: "Generate strategy",
+        hover_summary: "The plan is not generic marketing advice. Luma breaks the week into daily goals, channel actions, drafts, outreach, feedback loops, and approval gates.",
         expanded_details: [
-          "Create the core positioning: who the product is for, what problem it solves, and why users should care now.",
-          "Generate Product Hunt launch requirements: tagline, description, maker comment, feature bullets, and supporter outreach plan.",
-          "Create a launch asset checklist: 3 screenshots, 1 short demo video, landing page CTA, and proof/value screenshot.",
-          "Define what the demo video should include: problem, product walkthrough, key feature, outcome, and CTA.",
-          "Recommend the best launch channels based on the product type, target audience, and goal.",
-          "Create a day-before-launch checklist so the team knows exactly what must be ready.",
-          "Prepare the content so the user can move into a dedicated content creation page after generation.",
+          "Define a realistic first-100-users target by channel.",
+          "Pick the highest-signal daily actions for X, LinkedIn, Reddit, Product Hunt, Email, and communities.",
+          "Create milestones for replies, conversations, waitlist signups, and demos.",
+          "Separate content generation from public posting.",
+          "Set checkpoints for strategy updates based on replies and approvals.",
         ],
-        outputs: [
-          "Launch strategy",
-          "Product Hunt plan",
-          "Screenshot checklist",
-          "Demo video script",
-          "Channel strategy",
-        ],
-        human_role:
-          "Founder approves the final positioning, launch promise, and Product Hunt angle before content is generated.",
-        ai_role:
-          "Luma automatically generates the strategy, launch checklist, Product Hunt brief, screenshot plan, and demo video outline.",
-        tools_needed: ["Luma", "Product Hunt", "Screen Studio", "Canva"],
-        next_action: "Generate launch strategy",
+        outputs: ["7-day acquisition plan", "Daily growth goals", "Approval gates"],
+        human_role: "Approve positioning and any public-facing claims.",
+        ai_role: "Create the first-100-users execution strategy.",
+        tools_needed: ["Luma"],
+        next_action: "Generate strategy",
       },
       {
-        id: "2",
-        title: "Create Marketing Content",
-        description:
-          "AI creates platform-specific content for Product Hunt, X, LinkedIn, Reddit, and email.",
+        id: "find-platforms-segments",
+        title: "Find Platforms and Segments",
+        description: "Luma identifies where likely customers spend time and what to search for.",
+        owner: "ai",
+        agent: "Discovery Agent",
+        status: "ready",
+        app: "LinkedIn + X + Reddit",
+        icon: "search",
+        x: 55,
+        y: 18,
+        layoutGroup: "discovery",
+        colorTone: "platform",
+        action_type: "generate",
+        requires_approval: false,
+        execution_button_label: "Find targets",
+        hover_summary: "Luma does not claim live scraping. It creates suggested search targets, potential customer segments, people to look for, and search keywords for each platform.",
+        expanded_details: [
+          "Create ideal customer/persona segments.",
+          "Suggest LinkedIn search keywords and role filters.",
+          "Suggest X search keywords and conversation patterns.",
+          "Suggest Reddit communities and feedback-first entry points.",
+          "Suggest Product Hunt similar product audiences and founder communities.",
+        ],
+        outputs: ["Potential customer segments", "Suggested search targets", "Search keywords"],
+        human_role: "Pick which segments feel most aligned with the product.",
+        ai_role: "Generate customer discovery targets without claiming live scraping.",
+        tools_needed: ["LinkedIn", "X", "Reddit", "Product Hunt"],
+        next_action: "Find targets",
+      },
+      {
+        id: "daily-content",
+        title: "Generate Daily Marketing Content",
+        description: "Luma creates native daily content across X, LinkedIn, Reddit, Product Hunt, Email, and communities.",
         owner: "ai",
         agent: "Content Agent",
         status: "ready",
         app: "X + LinkedIn + Reddit",
         icon: "message",
-        hover_summary:
-          "Luma turns the approved launch strategy into content for the best SaaS launch platforms. It writes separate posts for Product Hunt, X, LinkedIn, Reddit, and Email so the message feels native on each channel instead of copied everywhere.",
+        x: 26,
+        y: 48,
+        layoutGroup: "content",
+        colorTone: "ai",
+        action_type: "generate",
+        requires_approval: true,
+        execution_button_label: "Generate content",
+        hover_summary: "For each day, Luma writes 2 X posts and 1 LinkedIn post, plus Reddit/community actions and outreach tasks. Everything public remains draft-only until a human approves it.",
         expanded_details: [
-          "Create Product Hunt tagline, description, maker comment, and feature bullets.",
-          "Create an X launch post, build-in-public thread, and follow-up posts.",
-          "Create a LinkedIn founder story post and a professional problem-solution post.",
-          "Create Reddit posts written as feedback requests, not spammy promotions.",
-          "Create cold email and early-user invite email drafts.",
-          "Suggest which screenshots or product visuals should be attached to each post.",
+          "Generate 14 X posts across 7 days.",
+          "Generate 7 LinkedIn posts across 7 days.",
+          "Create feedback-style Reddit/community actions, not spam posts.",
+          "Suggest Product Hunt and newsletter/community copy where useful.",
+          "Prepare each item with a clear expected output.",
         ],
-        outputs: [
-          "Product Hunt copy",
-          "X launch thread",
-          "LinkedIn launch post",
-          "Reddit community draft",
-          "Cold email draft",
-        ],
-        human_role:
-          "Founder reviews the generated content and confirms it matches the brand voice and public promise.",
-        ai_role:
-          "Luma writes the first complete version of every post, email, and launch description.",
-        tools_needed: ["Product Hunt", "X", "LinkedIn", "Reddit", "Email"],
+        outputs: ["14 X drafts", "7 LinkedIn drafts", "Reddit/community actions", "Product Hunt copy"],
+        human_role: "Review public posts, claims, tone, and spam risk before use.",
+        ai_role: "Create platform-native drafts for the whole week.",
+        tools_needed: ["X", "LinkedIn", "Reddit", "Product Hunt", "Communities"],
         next_action: "Generate content",
       },
       {
-        id: "3",
-        title: "Review Marketing Content",
-        description:
-          "Human reviews the message for clarity, accuracy, tone, and public risk.",
+        id: "find-people",
+        title: "Find Important People",
+        description: "Luma creates search targets for customers and influencers across X, LinkedIn, Reddit, and communities.",
+        owner: "ai",
+        agent: "Customer Discovery Agent",
+        status: "ready",
+        app: "X + LinkedIn + Reddit",
+        icon: "users",
+        x: 74,
+        y: 45,
+        layoutGroup: "discovery",
+        colorTone: "platform",
+        action_type: "generate",
+        requires_approval: false,
+        execution_button_label: "Generate search list",
+        hover_summary: "Luma gives the user practical places to look, not fake scraped lists. The output is a search map: roles, keywords, communities, similar products, and founder spaces.",
+        expanded_details: [
+          "List people to look for by role, pain, and buying signal.",
+          "Create LinkedIn and X search keywords.",
+          "Suggest Reddit communities and threads to monitor.",
+          "Suggest Product Hunt audiences from similar products.",
+          "Suggest founder communities and newsletter angles.",
+        ],
+        outputs: ["People to look for", "Search keywords", "Community targets"],
+        human_role: "Validate the final target list and avoid contacting irrelevant people.",
+        ai_role: "Create a search-ready discovery map.",
+        tools_needed: ["LinkedIn", "X", "Reddit", "Product Hunt", "Founder communities"],
+        next_action: "Generate search list",
+      },
+      {
+        id: "cold-outreach",
+        title: "Create Cold Outreach Emails",
+        description: "Luma writes cold email drafts and follow-ups for likely early customers.",
+        owner: "ai",
+        agent: "Email Agent",
+        status: "ready",
+        app: "Email",
+        icon: "mail",
+        x: 51,
+        y: 70,
+        layoutGroup: "outreach",
+        colorTone: "ai",
+        action_type: "generate",
+        requires_approval: true,
+        execution_button_label: "Generate emails",
+        hover_summary: "Luma creates concise outreach drafts for potential customers and warm communities. It can save drafts, but it does not send emails publicly without human approval.",
+        expanded_details: [
+          "Write cold email drafts by persona.",
+          "Write short follow-up emails.",
+          "Personalize around pain and desired outcome.",
+          "Keep asks low-friction: feedback, demo, early access, or reply.",
+          "Mark every send as requiring approval first.",
+        ],
+        outputs: ["Cold email drafts", "Follow-up drafts", "Persona-specific outreach"],
+        human_role: "Approve recipients, copy, and send timing before anything is sent.",
+        ai_role: "Draft outreach and save copy for review.",
+        tools_needed: ["Email", "Resend", "Gmail"],
+        next_action: "Generate emails",
+      },
+      {
+        id: "human-approval",
+        title: "Ask Human Approval",
+        description: "Humans review posts, emails, community copy, and positioning before public use.",
         owner: "human",
         agent: "Founder Review",
         status: "waiting",
         app: "Luma",
         icon: "userCheck",
-        hover_summary:
-          "This step keeps humans in control of public messaging. Luma can suggest improvements, but a human must approve the final Product Hunt copy, social posts, and emails before anything goes live.",
+        x: 78,
+        y: 72,
+        layoutGroup: "approval",
+        colorTone: "human",
+        action_type: "approve",
+        requires_approval: true,
+        execution_button_label: "Approve drafts",
+        hover_summary: "This is the control point for all public posts and emails. Luma plans the strategy, does the repeatable work, and only asks humans for approval.",
         expanded_details: [
-          "Check if the positioning is accurate and not overpromising.",
-          "Check if the Product Hunt copy is clear in the first few seconds and uses direct language.",
-          "Check if Reddit posts sound like a genuine feedback request instead of an advertisement.",
-          "Check if cold emails feel personal, relevant, and appropriate for the recipient.",
-          "Check if each post has a clear call-to-action, the right asset attached, and the right platform fit.",
-          "Approve, edit, or regenerate any piece of content before scheduling.",
+          "Review positioning and claims.",
+          "Check X and LinkedIn drafts before posting.",
+          "Check Reddit/community drafts for spam risk.",
+          "Approve email drafts and recipient logic.",
+          "Send approved items forward to draft saving or scheduling.",
         ],
-        outputs: [
-          "Approved positioning",
-          "Approved social posts",
-          "Approved email copy",
-          "Approved Product Hunt copy",
-        ],
-        human_role:
-          "Founder or marketing teammate approves, edits, or rejects final content before it is used.",
-        ai_role:
-          "Luma highlights weak CTAs, spam risk, unclear positioning, and platform mismatch.",
+        outputs: ["Approved drafts", "Edits requested", "Approval queue"],
+        human_role: "Approve, edit, or reject all public-facing output.",
+        ai_role: "Surface review items and update approval status.",
         tools_needed: ["Luma"],
-        next_action: "Review content",
+        next_action: "Approve drafts",
       },
       {
-        id: "4",
-        title: "Schedule Social Posts",
-        description:
-          "AI prepares launch posts as drafts and schedules them after human approval.",
-        owner: "ai",
-        agent: "Social Scheduling Agent",
-        status: "ready",
-        app: "X + LinkedIn",
-        icon: "calendar",
-        hover_summary:
-          "After human approval, Luma organizes the posts into a launch timeline. It saves drafts for the connected platforms, suggests the best posting order, and only schedules or posts when the human has verified the final copy.",
-        expanded_details: [
-          "Create a 24-hour launch-day posting schedule with teaser, launch, reminder, and follow-up slots.",
-          "Attach the best screenshot, product clip, or demo video frame to each post.",
-          "Save the approved content as drafts on the connected platforms when direct posting is not enabled.",
-          "Only move a post to scheduled or published status after human verification.",
-          "Keep track of drafted, approved, scheduled, and published states so nothing is posted too early.",
-          "Prepare the launch sequence so social media supports the Product Hunt launch instead of competing with it.",
-        ],
-        outputs: [
-          "24-hour posting schedule",
-          "Drafted posts",
-          "Post timing plan",
-          "Approval status",
-        ],
-        human_role:
-          "Human verifies final public posts and confirms whether Luma can schedule or save them as drafts.",
-        ai_role:
-          "Luma organizes timing, creates drafts, suggests best posting order, and updates post status.",
-        tools_needed: ["X", "LinkedIn", "Luma"],
-        next_action: "Schedule approved posts",
-      },
-      {
-        id: "5",
-        title: "Send Outreach Emails",
-        description:
-          "AI writes and sends approved outreach emails to expected customers.",
-        owner: "ai",
-        agent: "Email Agent",
-        status: "ready",
-        app: "Resend",
-        icon: "mail",
-        hover_summary:
-          "Luma creates outreach emails for expected customers, early supporters, and relevant users. It prepares subject lines, follow-ups, and recipient logic, but nothing is sent until a human approves the final version.",
-        expanded_details: [
-          "Define expected customer segments based on the product, audience, and launch goal.",
-          "Create cold email drafts for early beta users, expected customers, and warm contacts.",
-          "Create subject lines and follow-up versions.",
-          "Ask the human to approve the final email, recipients, and timing before sending.",
-          "Send approved emails through the connected email integration only after approval.",
-          "Track sent, pending, replied, and follow-up status so outreach stays organized.",
-        ],
-        outputs: [
-          "Cold email draft",
-          "Follow-up email",
-          "Expected customer list brief",
-          "Sent email status",
-        ],
-        human_role:
-          "Human approves the final email message, target group, and send action before Luma sends anything.",
-        ai_role:
-          "Luma writes email drafts, creates follow-ups, prepares recipient strategy, and sends approved emails through Resend.",
-        tools_needed: ["Resend", "Email", "Luma"],
-        next_action: "Prepare outreach email",
-      },
-      {
-        id: "6",
-        title: "Prepare Community Posts",
-        description:
-          "AI drafts community posts and humans decide where they should be posted.",
-        owner: "ai",
-        agent: "Community Agent",
-        status: "ready",
-        app: "Reddit",
-        icon: "users",
-        hover_summary:
-          "Luma creates Reddit and community posts that ask for feedback instead of sounding promotional. Humans choose the final communities because community posting needs judgment.",
-        expanded_details: [
-          "Suggest relevant subreddits and communities for the product category.",
-          "Create feedback-style Reddit post drafts.",
-          "Create different versions for builders, SaaS users, students, or founders depending on the product.",
-          "Explain which communities are risky or likely to reject promotional posts.",
-          "Let the human approve or copy the post manually.",
-          "Track community posts as drafted, approved, ready, or posted.",
-        ],
-        outputs: [
-          "Reddit post draft",
-          "Community list",
-          "Feedback request angle",
-          "Posting risk notes",
-        ],
-        human_role:
-          "Human chooses the final communities and approves the post to avoid spammy or off-topic posting.",
-        ai_role:
-          "Luma drafts posts, suggests communities, rewrites for tone, and prepares copy-ready content.",
-        tools_needed: ["Reddit", "Indie Hackers", "Discord", "Luma"],
-        next_action: "Draft community posts",
-      },
-      {
-        id: "7",
-        title: "Create Launch Calendar",
-        description:
-          "AI creates a clear launch-day and follow-up action plan.",
-        owner: "ai",
-        agent: "Planner Agent",
-        status: "ready",
-        app: "Calendar",
-        icon: "calendar",
-        hover_summary:
-          "Luma turns the whole strategy into a timeline so the team knows what to do before launch, during launch, and after launch.",
-        expanded_details: [
-          "Create a day-before-launch checklist.",
-          "Create an hour-by-hour launch-day schedule.",
-          "Create a 7-day post-launch follow-up plan.",
-          "Assign tasks to AI agents and human teammates.",
-          "Mark approval gates before public actions.",
-          "Add reminders for follow-ups, reposts, and outreach replies.",
-        ],
-        outputs: [
-          "Launch-day schedule",
-          "7-day follow-up plan",
-          "Task ownership map",
-          "Reminder list",
-        ],
-        human_role:
-          "Team confirms the schedule, ownership, and final launch readiness.",
-        ai_role:
-          "Luma organizes all tasks into a sequence and updates the workflow status.",
-        tools_needed: ["Calendar", "Luma"],
-        next_action: "Create launch calendar",
-      },
-      {
-        id: "8",
-        title: "Track Results",
-        description:
-          "AI tracks campaign progress, replies, approvals, and pending work.",
+        id: "schedule-save-drafts",
+        title: "Schedule / Save Drafts",
+        description: "Luma saves approved drafts and schedules only when approval exists.",
         owner: "system",
-        agent: "Tracker Agent",
+        agent: "Draft Operations Agent",
+        status: "ready",
+        app: "Calendar + Drafts",
+        icon: "calendar",
+        x: 26,
+        y: 83,
+        layoutGroup: "operations",
+        colorTone: "system",
+        action_type: "save_draft",
+        requires_approval: true,
+        execution_button_label: "Save drafts",
+        hover_summary: "Approved outputs can be saved as drafts or scheduled. Luma never auto-posts publicly from this workflow without a human approval step.",
+        expanded_details: [
+          "Save X, LinkedIn, Reddit, Product Hunt, and email drafts.",
+          "Create a suggested calendar for the 7-day plan.",
+          "Respect approval status before scheduling.",
+          "Keep unapproved drafts in waiting_approval.",
+          "Track draft, scheduled, approved, and completed states.",
+        ],
+        outputs: ["Draft queue", "Suggested schedule", "Approval-aware status"],
+        human_role: "Approve scheduling and public posting.",
+        ai_role: "Organize approved drafts into a calendar and save them.",
+        tools_needed: ["Calendar", "X", "LinkedIn", "Reddit", "Email"],
+        next_action: "Save drafts",
+      },
+      {
+        id: "track-growth",
+        title: "Track Growth and Update Strategy",
+        description:
+          "Luma tracks replies, approvals, drafts, and progress toward the first 100 users.",
+        owner: "system",
+        agent: "Growth Tracker",
         status: "ready",
         app: "Luma",
         icon: "activity",
-        hover_summary:
-          "Luma tracks what has been generated, approved, sent, posted, or left pending. This gives the user a traceable launch system instead of scattered tasks.",
+        x: 6,
+        y: 67,
+        layoutGroup: "tracking",
+        colorTone: "system",
+        action_type: "track",
+        requires_approval: false,
+        execution_button_label: "Track growth",
+        hover_summary: "Luma watches execution status and updates the strategy from signals like replies, approvals, and draft volume. It keeps the first-100-users goal visible.",
         expanded_details: [
-          "Track which content has been generated.",
-          "Track which content needs human approval.",
-          "Track sent emails and pending follow-ups.",
-          "Track social posts as drafted, approved, scheduled, or published.",
-          "Track Reddit/community posts as ready or manually posted.",
-          "Summarize what worked and what should be improved next.",
+          "Track generated X, LinkedIn, Reddit, Product Hunt, and email drafts.",
+          "Track approval state for every public item.",
+          "Track replies, interested users, and first-100 progress.",
+          "Suggest what to repeat or change each day.",
+          "Save winning messages to product memory.",
         ],
-        outputs: [
-          "Trace timeline",
-          "Launch status",
-          "Pending task list",
-          "Follow-up list",
-        ],
-        human_role:
-          "Human reviews results and decides what should be repeated or changed.",
-        ai_role:
-          "Luma summarizes progress, detects pending work, and recommends next actions.",
-        tools_needed: ["Luma", "Email", "Social platforms"],
-        next_action: "Track launch progress",
+        outputs: ["Growth tracker", "Approval tracker", "Updated strategy"],
+        human_role: "Review results and decide what should be repeated or changed.",
+        ai_role: "Track progress and recommend updates.",
+        tools_needed: ["Luma", "Slack", "Email"],
+        next_action: "Track growth",
       },
-      {
-        id: "9",
-        title: "Memory Update",
-        description:
-          "Luma saves approved decisions and winning messages for future workflows.",
-        owner: "system",
-        agent: "Memory Agent",
-        status: "ready",
-        app: "Luma",
-        icon: "brain",
-        hover_summary:
-          "After the workflow runs, Luma saves what humans approved and what messaging worked. Future workflows become faster because the product memory improves.",
-        expanded_details: [
-          "Save approved positioning.",
-          "Save approved audience and platform choices.",
-          "Save best-performing post and email angles.",
-          "Save rejected or risky messaging so it is not repeated.",
-          "Save workflow history for future launches.",
-          "Use memory to make future content more accurate.",
-        ],
-        outputs: [
-          "Product memory",
-          "Approved messaging",
-          "Launch history",
-          "Reusable workflow context",
-        ],
-        human_role:
-          "Human confirms which decisions should become product memory.",
-        ai_role:
-          "Luma stores approved decisions and uses them for the next workflow.",
-        tools_needed: ["Luma Memory"],
-        next_action: "Update memory",
-      },
-    ],
+    ];
+
+  return normalizeWorkflow({
+    product_brain: {
+      summary: `${productName} is ready for a 7-day execution plan focused on getting the first 100 users. Luma plans the strategy, does the repeatable work, and only asks humans for approval.`,
+      positioning: `From one product prompt to a 7-day execution plan for your first 100 users.`,
+      best_channels: [
+        "X/Twitter — founder-led posts, replies, and daily proof",
+        "LinkedIn — credible founder story and customer pain posts",
+        "Reddit — feedback-first community posts and useful replies",
+        "Product Hunt — similar product audiences and launch copy",
+        "Email — direct outreach to potential early customers",
+        "Slack / communities — context, warm intros, and founder groups",
+      ],
+      core_audience: [
+        audience,
+        "people already discussing this pain on X, LinkedIn, Reddit, and communities",
+        "users of similar products who may want an alternative",
+      ],
+    },
+
+    workflow: nodes,
+    flow_nodes: nodes,
 
     platform_content: [
       {
-        platform: "Product Hunt",
-        content_type: "Launch page brief",
-        draft: `Tagline: ${productName} helps ${input.targetAudience || "busy teams"} turn messy work into a clear AI + human workflow.\n\nDescription: ${productName} helps teams plan, assign, approve, and track launch work across AI agents and humans. Instead of scattered prompts and tools, every task becomes one traceable workflow.\n\nMaker comment: We built this because teams need AI that knows what to do, what humans should approve, and how to keep work moving.`,
-        owner: "AI drafts, founder approves",
-        tool: "Product Hunt",
+        platform: "X",
+        content_type: "Day 1 post 1",
+        draft: `Building ${productName}. The goal this week is simple: talk to the first 100 people who feel the problem, learn fast, and turn every reply into a sharper product story. Looking for early feedback from ${audience}.`,
+        owner: "AI drafts, human approves",
+        tool: "X",
       },
       {
         platform: "X",
-        content_type: "Launch post",
-        draft: `Launching ${productName} tomorrow.\n\nAI should not just answer questions. It should help route work.\n\n${productName} turns a goal into a workflow, assigns repetitive tasks to AI, keeps humans in control for approvals, and tracks every step.\n\nLooking for early feedback.`,
+        content_type: "Day 1 post 2",
+        draft: `Most early growth plans are too vague. For ${productName}, I am testing a 7-day loop: publish daily, ask communities for feedback, write direct outreach, track replies, and update the message every day.`,
         owner: "AI drafts, founder approves",
         tool: "X",
       },
       {
         platform: "LinkedIn",
-        content_type: "Founder launch story",
-        draft: `Building products is easier than ever, but executing the work around them is still messy.\n\nThat is why we built ${productName}: a human + AI workflow system that breaks a goal into tasks, assigns repeatable work to AI agents, routes decisions to people, and tracks progress.\n\nWe are opening early access and looking for feedback from ${input.targetAudience || "founders, builders, and small teams"}.`,
+        content_type: "Day 1 founder story",
+        draft: `This week I am focused on getting the first 100 users for ${productName}. The plan is not to “post more.” It is to talk to the right people, share the product story clearly, ask for feedback in relevant communities, and personally follow up with people who already feel the problem.`,
         owner: "AI drafts, founder approves",
         tool: "LinkedIn",
       },
       {
         platform: "Reddit",
-        content_type: "Community feedback post",
-        draft: `Hey everyone,\n\nI am building ${productName}, a tool that turns a goal into a human + AI workflow. AI handles repetitive work like drafting, research, planning, and tracking, while humans approve the important decisions.\n\nI am trying to understand if this is useful for ${input.targetAudience || "small teams and builders"}.\n\nWould you use something like this? What workflow would you want AI to route for you?`,
+        content_type: "Feedback-style post",
+        draft: `I am working on ${productName} for ${audience}. I am not trying to promo-drop; I am trying to understand the real workflow people use today. What is the most painful part of solving this problem right now?`,
         owner: "AI drafts, human posts manually",
         tool: "Reddit",
       },
       {
+        platform: "Product Hunt",
+        content_type: "Launch copy",
+        draft: `${productName} helps ${audience} solve a painful workflow with a clear, practical path. Suggested PH angle: show the problem, the before/after, three concrete use cases, and invite makers to give feedback before a wider launch.`,
+        owner: "AI drafts, founder approves",
+        tool: "Product Hunt",
+      },
+      {
         platform: "Email",
         content_type: "Cold outreach email",
-        draft: `Subject: Quick feedback on ${productName}?\n\nHey [Name],\n\nI am building ${productName}, a workflow system that routes tasks between AI agents and humans.\n\nIt helps ${input.targetAudience || "teams and founders"} turn messy goals into clear workflows where AI handles repetitive work and humans approve important decisions.\n\nWould you be open to taking a quick look and sharing feedback?`,
+        draft: `Subject: Quick feedback on ${productName}?\n\nHey [Name], I am building ${productName} for ${audience}. I noticed you may care about [pain]. Would you be open to a quick look and blunt feedback? No pitch, just trying to learn from the right people.`,
         owner: "AI drafts, human approves, Resend sends",
         tool: "Resend",
       },
     ],
 
+    daily_plan: Array.from({ length: 7 }, (_, index) => {
+      const day = index + 1;
+      return {
+        day,
+        daily_goal: [
+          "Validate the sharpest pain and offer.",
+          "Find reachable early customer segments.",
+          "Start useful public conversations.",
+          "Turn replies into warmer outreach.",
+          "Prepare Product Hunt and community copy.",
+          "Push for demos, feedback calls, and waitlist joins.",
+          "Summarize signals and update the strategy.",
+        ][index],
+        platforms: ["X/Twitter", "LinkedIn", "Reddit", "Email", day >= 5 ? "Product Hunt" : "Communities"],
+        x_posts: [
+          `Day ${day}: one thing I am learning while building ${productName} for ${audience}: the real pain is usually more specific than the category name. Looking for people who feel this problem now.`,
+          `Day ${day}: testing a first-100-users loop for ${productName}: useful post, direct replies, feedback-first community ask, personal outreach, then update the message from replies.`,
+        ],
+        linkedin_post: `Day ${day} update for ${productName}: I am focusing on conversations over vanity metrics. The goal is to identify who has the problem, what words they use, and what would make them try the product this week.`,
+        reddit_community_action: "Ask a feedback-first question in one relevant community or reply helpfully to existing threads. Do not post promotional copy.",
+        cold_outreach_task: `Send 10 personalized feedback requests to people matching the suggested search targets for ${productName}.`,
+        expected_output: "Drafts created, replies tracked, approval queue updated, and strategy notes improved.",
+        human_approval_needed: true,
+      };
+    }),
+
+    customer_discovery: [
+      {
+        segment: audience,
+        where_to_find: ["LinkedIn role searches", "X keyword searches", "Reddit problem threads", "Founder communities"],
+        linkedin_search_keywords: [`${audience} workflow`, `${productName} alternative`, "founder operations", "growth marketing"],
+        x_search_keywords: [`need a better way to ${input.description || "solve this"}`, `${productName}`, "looking for tool", "manual workflow"],
+        reddit_communities: ["r/SaaS", "r/startups", "r/Entrepreneur", "category-specific communities"],
+        product_hunt_audiences: ["Users of similar products", "Makers who upvote productivity and SaaS tools"],
+        founder_communities: ["Indie Hackers", "YC Startup School", "Slack founder groups", "newsletter communities"],
+      },
+    ],
+
+    execution_points: [
+      { id: "x-day-1", title: "Create Day 1 X posts", what_ai_will_do: "I will create 2 X posts for Day 1", platform: "X", requires_approval: true, output_preview: "Two short founder-led posts for review." },
+      { id: "linkedin-story", title: "Create LinkedIn founder story", what_ai_will_do: "I will create 1 LinkedIn founder story post", platform: "LinkedIn", requires_approval: true, output_preview: "One professional post with the first-100-users angle." },
+      { id: "find-customers", title: "Find customer profiles", what_ai_will_do: "I will find customer profiles from LinkedIn, X, and Reddit", platform: "Search targets", requires_approval: false, output_preview: "Suggested search targets, segments, and keywords." },
+      { id: "cold-emails", title: "Create cold email drafts", what_ai_will_do: "I will create cold email drafts", platform: "Email", requires_approval: true, output_preview: "Persona-specific cold email and follow-up drafts." },
+      { id: "ph-copy", title: "Prepare Product Hunt copy", what_ai_will_do: "I will prepare Product Hunt launch copy", platform: "Product Hunt", requires_approval: true, output_preview: "Tagline, description, maker comment, and launch checklist." },
+      { id: "track-growth", title: "Track growth loop", what_ai_will_do: "I will track replies, approvals, and growth", platform: "Luma", requires_approval: false, output_preview: "Execution statuses and first-100 progress." },
+    ],
+
     human_tasks: [
       {
-        title: "Approve launch positioning",
+        title: "Approve first-100-users positioning",
         reason:
-          "The launch promise affects Product Hunt, social posts, emails, and community posts.",
+          "The message affects every public post, email, and community interaction.",
       },
       {
         title: "Review public content",
@@ -546,11 +641,11 @@ function buildFallback(input: ProductInput): DetailedGeneratedWorkflow {
 
     ai_tasks: [
       {
-        title: "Generate launch strategy and Product Hunt plan",
+        title: "Generate first-100-users strategy",
         tool: "Luma Strategy Agent",
       },
       {
-        title: "Create platform-specific marketing content",
+        title: "Create 7-day platform content",
         tool: "Content Agent",
       },
       {
@@ -568,13 +663,12 @@ function buildFallback(input: ProductInput): DetailedGeneratedWorkflow {
     ],
 
     trace: [
-      "Luma learned the product and launch goal",
-      "Launch strategy and channel plan created",
-      "AI tasks routed to Luma agents",
-      "Human approvals added for public-risk decisions",
-      "Platform-specific content drafts prepared",
-      "Outreach and scheduling workflow created",
-      "Tracking and memory update steps added",
+      "Luma learned the product prompt and available Slack context",
+      "First-100-users strategy created",
+      "Suggested search targets and customer segments prepared",
+      "7-day content and outreach plan generated",
+      "Human approval gates added before public posts and email sends",
+      "Draft saving and tracking workflow prepared",
     ],
   } as DetailedGeneratedWorkflow);
 }
@@ -603,18 +697,20 @@ You are Luma, a prompt-to-workflow orchestration engine for human + AI teams.
 
 Luma turns one user goal into a detailed workflow.
 
-For marketing/product launch workflows, Luma must create an A-to-Z launch execution system, not short advice.
+For marketing/product launch workflows, Luma must create a 7-day execution system for getting the user's first 100 users, not short advice.
 
 Core behavior:
 - Learn the product and goal.
-- Define the launch strategy.
+- Define the first 100 users strategy.
+- Find best platforms and customer segments.
 - Decide what AI can do.
 - Decide what humans must approve.
 - Create detailed platform content.
-- Explain required assets like screenshots, demo video, launch page copy, and outreach.
+- Create daily social, community, Product Hunt, and outreach drafts.
 - Route repetitive tasks to AI.
 - Route sensitive/public/final decisions to humans.
 - Track everything through trace events.
+- Do not claim live scraping unless an API is connected. Use phrases like "Suggested search targets", "Potential customer segments", "People to look for", and "Search keywords".
 
 Return only valid JSON.
 No markdown.
@@ -638,6 +734,14 @@ Return this exact JSON shape:
       "status": "ready",
       "app": "",
       "icon": "bot",
+      "x": 10,
+      "y": 20,
+      "layoutGroup": "strategy",
+      "colorTone": "ai",
+      "action_type": "generate",
+      "requires_approval": false,
+      "detailed_plan": [],
+      "execution_button_label": "",
       "hover_summary": "",
       "expanded_details": [],
       "outputs": [],
@@ -645,6 +749,41 @@ Return this exact JSON shape:
       "ai_role": "",
       "tools_needed": [],
       "next_action": ""
+    }
+  ],
+  "flow_nodes": [],
+  "daily_plan": [
+    {
+      "day": 1,
+      "daily_goal": "",
+      "platforms": [],
+      "x_posts": [],
+      "linkedin_post": "",
+      "reddit_community_action": "",
+      "cold_outreach_task": "",
+      "expected_output": "",
+      "human_approval_needed": true
+    }
+  ],
+  "customer_discovery": [
+    {
+      "segment": "",
+      "where_to_find": [],
+      "linkedin_search_keywords": [],
+      "x_search_keywords": [],
+      "reddit_communities": [],
+      "product_hunt_audiences": [],
+      "founder_communities": []
+    }
+  ],
+  "execution_points": [
+    {
+      "id": "",
+      "title": "",
+      "what_ai_will_do": "",
+      "platform": "",
+      "requires_approval": true,
+      "output_preview": ""
     }
   ],
   "platform_content": [
@@ -673,6 +812,8 @@ Return this exact JSON shape:
 
 Workflow rules:
 - Generate exactly 9 workflow nodes.
+- Put the same 9 nodes in workflow and flow_nodes.
+- Each flow node must include x/y positions for a graph layout across a 0-100 board.
 - Each node must be detailed enough for hover and click expansion.
 - Each node description should be short, but hover_summary and expanded_details must explain the full step.
 - owner must be only "ai", "human", or "system".
@@ -689,36 +830,47 @@ Each workflow node must include:
 - tools_needed: apps/platforms used in this step.
 - next_action: a strong button label like "Generate launch strategy" or "Create content".
 
-For product launch and marketing workflows, include these stages:
-1. Define Launch Strategy
-2. Create Marketing Content
-3. Review Marketing Content
-4. Schedule Social Posts
-5. Send Outreach Emails
-6. Prepare Community Posts
-7. Create Launch Calendar
-8. Track Results
-9. Memory Update
+For first-100-users marketing workflows, include these exact stages:
+1. Learn product from prompt / Slack context
+2. Define first 100 users strategy
+3. Find best platforms and customer segments
+4. Generate daily marketing content
+5. Find important people/customers from X, LinkedIn, Reddit, communities
+6. Create cold outreach emails
+7. Ask human approval
+8. Schedule / save drafts
+9. Track growth and update strategy
 
-Detailed requirements for launch workflows:
-- Define Launch Strategy must include Product Hunt launch requirements:
-  3 product screenshots, 1 demo video, tagline, description, maker comment, launch checklist, supporter outreach plan.
-- Create Marketing Content must explain content creation for Product Hunt, X/Twitter, LinkedIn, Reddit, and Email.
-- Create Marketing Content must be detailed enough to explain the 5 best SaaS marketing channels, the asset used with each post, and how the user moves into content creation after strategy generation.
-- Review Marketing Content must include human checks for positioning, clarity, tone, spam risk, brand safety, and public post quality.
-- Schedule Social Posts must explain that AI can save drafts and schedule only after human approval.
-- Send Outreach Emails must explain that AI drafts emails and sends through integration only after human approval.
-- Prepare Community Posts must explain that Reddit/community content should be feedback-first and human-approved.
-- Track Results must explain tracking approvals, sent emails, posts, follow-ups, and pending work.
-- Memory Update must explain saving approved decisions for future workflows.
+Daily plan requirements:
+- Generate exactly 7 daily_plan items.
+- For each day include daily goal, platforms to use, 2 X/Twitter posts, 1 LinkedIn post, Reddit/community action, cold outreach task, expected output, and whether human approval is needed.
+- X posts must total 14 across the week.
+- LinkedIn posts must total 7 across the week.
+- Reddit/community actions must be feedback-style and useful, not spam.
+- Email tasks must be cold outreach drafts for potential customers.
+
+Customer discovery requirements:
+- Create ideal customers/personas and where to find them.
+- Include LinkedIn search keywords, X search keywords, Reddit communities, Product Hunt similar product audiences, and founder communities.
+- Do not present these as scraped live data.
+
+Execution point requirements:
+- Include action cards such as:
+  "I will create 2 X posts for Day 1"
+  "I will create 1 LinkedIn founder story post"
+  "I will find customer profiles from LinkedIn, X, and Reddit"
+  "I will create cold email drafts"
+  "I will prepare Product Hunt launch copy"
+  "I will track replies, approvals, and growth"
+- Public posts and emails must require human approval first.
 
 Quality rules:
 - Be specific to the user’s product.
-- Make output feel like a real launch operating plan from A to Z.
+- Make output feel like a real first-100-users operating plan from A to Z.
 - Do not produce generic advice.
 - Platform content must contain usable draft text, not placeholders.
 - Every platform_content draft must be 100 words or fewer.
-- X, LinkedIn, and Reddit posts must be concise and ready to post without exceeding 100 words.
+- X, LinkedIn, and Reddit posts must be concise and ready to review without exceeding 100 words.
 `;
 
     const userPrompt = `
@@ -738,22 +890,21 @@ Product / workflow context:
 - Preferred platforms/tools: ${input.tools || "Not provided"}
 
 If the request is about marketing, launch, product distribution, outreach, Product Hunt, social content, Reddit, X, LinkedIn, email, or getting first users:
-Generate the full A-to-Z launch workflow.
+Generate the full 7-day first-100-users workflow.
 
 Make sure the workflow explains:
 - what Luma does automatically
 - what humans approve
-- what assets are needed
-- where the user should post
-- what content gets created
-- when things should be scheduled
+- where the user should look for potential customers
+- what content gets created for X, LinkedIn, Reddit, Product Hunt, Email, and communities
+- when things should be saved as drafts or scheduled
 - how emails are sent
 - how results are tracked
 - how memory improves future workflows
 
-The first node should be "Define Launch Strategy".
-The second node should be "Create Marketing Content".
-The third node should be "Review Marketing Content".
+The first node should be "Learn Product Context".
+The second node should be "Define First 100 Users Strategy".
+The third node should be "Find Platforms and Segments".
 `;
 
     const response = await fetch(OPENAI_API_URL, {
