@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 function textToHtml(text: string) {
   return text
     .replace(/&/g, "&amp;")
@@ -28,6 +26,8 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
+
+    const resend = new Resend(process.env.RESEND_API_KEY);
 
     const result = await resend.emails.send({
       from: process.env.LUMA_FROM_EMAIL || "onboarding@resend.dev",
